@@ -1,0 +1,76 @@
+=== AUTO-BUILD PROGRESS ===
+
+Project: Agent Performance Analytics Dashboard
+Spec: 021-build-agent-performance-analytics-dashboard
+Started: 2025-12-17
+
+Workflow Type: feature
+Rationale: New feature requiring UI components, state management, IPC handlers, and data aggregation.
+           Follows multi-service feature workflow with primarily frontend work.
+
+Session 1 (Planner):
+- Created implementation_plan.json
+- Phases: 6
+- Total subtasks: 17
+- Created init.sh
+- Updated context.json with files and patterns
+
+Phase Summary:
+- Phase 1: Analytics Types & Store Foundation - 2 subtasks, no dependencies
+- Phase 2: IPC Handlers & Data Layer - 3 subtasks, depends on phase-1
+- Phase 3: Install Charting Library - 1 subtask, depends on phase-1
+- Phase 4: Dashboard UI Components - 8 subtasks, depends on phase-2 and phase-3
+- Phase 5: Sidebar Navigation Integration - 2 subtasks, depends on phase-4
+- Phase 6: Integration & Verification - 2 subtasks, depends on phase-5
+
+Services Involved:
+- auto-claude-ui: Primary service for dashboard UI, store, IPC handlers
+
+Files to Create (12 total):
+- src/shared/types/analytics.ts
+- src/renderer/stores/analytics-store.ts
+- src/main/ipc-handlers/analytics-handlers.ts
+- src/preload/api/modules/analytics-api.ts
+- src/renderer/components/Analytics.tsx
+- src/renderer/components/analytics/MetricsOverview.tsx
+- src/renderer/components/analytics/SuccessRateChart.tsx
+- src/renderer/components/analytics/PhaseTimingChart.tsx
+- src/renderer/components/analytics/TaskHistory.tsx
+- src/renderer/components/analytics/CostEstimate.tsx
+- src/renderer/components/analytics/DateRangeFilter.tsx
+- src/renderer/components/analytics/index.ts
+
+Files to Modify (7 total):
+- src/shared/types/index.ts
+- src/shared/constants/ipc.ts
+- src/main/ipc-handlers/index.ts
+- src/preload/api/index.ts
+- src/renderer/components/Sidebar.tsx
+- src/renderer/App.tsx
+- package.json (add recharts dependency)
+
+Parallelism Analysis:
+- Max parallel phases: 2
+- Recommended workers: 1
+- Parallel groups: [phase-2, phase-3] can run together after phase-1
+- Note: Mostly sequential due to UI component dependencies
+
+Key Patterns Identified:
+- Zustand store: task-store.ts, insights-store.ts
+- Page component: Insights.tsx
+- Sidebar nav: Sidebar.tsx (SidebarView type, projectNavItems array)
+- IPC handlers: ipc-handlers/index.ts registration pattern
+- Preload API: modules pattern with interface + factory function
+
+Data Sources:
+- implementation_plan.json: phases, subtasks, qa_iteration_history, status
+- task_logs.json: phase timing, entries with timestamps
+- Note: Token/cost data not tracked - will use estimation
+
+=== STARTUP COMMAND ===
+
+To continue building this spec, run:
+
+  source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 021 --parallel 1
+
+=== END SESSION 1 ===

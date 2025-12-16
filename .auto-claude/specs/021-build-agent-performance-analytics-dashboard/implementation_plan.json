@@ -1,0 +1,423 @@
+{
+  "feature": "Agent Performance Analytics Dashboard",
+  "workflow_type": "feature",
+  "workflow_rationale": "This is a new feature requiring new UI components, state management, IPC handlers, and data aggregation. Follows the multi-service feature workflow with backend integration for data collection.",
+  "services_involved": ["auto-claude-ui"],
+  "phases": [
+    {
+      "id": "phase-1-types-store",
+      "name": "Analytics Types & Store Foundation",
+      "type": "implementation",
+      "description": "Create the foundational analytics types and Zustand store with data loading capabilities",
+      "depends_on": [],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-1-1",
+          "description": "Create analytics TypeScript types and interfaces for metrics data structures",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/shared/types/index.ts"],
+          "files_to_create": ["src/shared/types/analytics.ts"],
+          "patterns_from": ["src/shared/types/task.ts", "src/shared/types/insights.ts"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-1-2",
+          "description": "Create analytics Zustand store with state interface and actions for metrics management",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/stores/analytics-store.ts"],
+          "patterns_from": ["src/renderer/stores/task-store.ts", "src/renderer/stores/insights-store.ts"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-2-ipc-handlers",
+      "name": "IPC Handlers & Data Layer",
+      "type": "implementation",
+      "description": "Create IPC handlers for loading and aggregating analytics data from task files",
+      "depends_on": ["phase-1-types-store"],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-2-1",
+          "description": "Add analytics IPC channel constants to shared constants",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/shared/constants/ipc.ts"],
+          "files_to_create": [],
+          "patterns_from": ["src/shared/constants/ipc.ts"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-2-2",
+          "description": "Create analytics IPC handlers for loading and aggregating task metrics data",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/main/ipc-handlers/index.ts"],
+          "files_to_create": ["src/main/ipc-handlers/analytics-handlers.ts"],
+          "patterns_from": ["src/main/ipc-handlers/insights-handlers.ts", "src/main/ipc-handlers/task-handlers.ts"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-2-3",
+          "description": "Create preload analytics API for renderer-main process communication",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/preload/api/index.ts"],
+          "files_to_create": ["src/preload/api/modules/analytics-api.ts"],
+          "patterns_from": ["src/preload/api/modules/insights-api.ts"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-3-charting",
+      "name": "Install Charting Library",
+      "type": "implementation",
+      "description": "Install and configure recharts library for data visualization",
+      "depends_on": ["phase-1-types-store"],
+      "parallel_safe": true,
+      "subtasks": [
+        {
+          "id": "subtask-3-1",
+          "description": "Install recharts library and verify it works with the build system",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["package.json"],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npm list recharts",
+            "expected": "recharts@"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-4-dashboard-ui",
+      "name": "Dashboard UI Components",
+      "type": "implementation",
+      "description": "Build the main Analytics dashboard component and all sub-components",
+      "depends_on": ["phase-2-ipc-handlers", "phase-3-charting"],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-4-1",
+          "description": "Create the main Analytics dashboard page component with layout structure",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/Analytics.tsx"],
+          "patterns_from": ["src/renderer/components/Insights.tsx"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-2",
+          "description": "Create MetricsOverview component with key metrics cards (total tasks, success rate, avg time, cost)",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/MetricsOverview.tsx"],
+          "patterns_from": ["src/renderer/components/task-detail/TaskProgress.tsx"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-3",
+          "description": "Create SuccessRateChart component with time-based success/failure visualization using recharts",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/SuccessRateChart.tsx"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-4",
+          "description": "Create PhaseTimingChart component with bar chart showing avg time per execution phase",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/PhaseTimingChart.tsx"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-5",
+          "description": "Create TaskHistory component with sortable/filterable table of all tasks with metrics",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/TaskHistory.tsx"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-6",
+          "description": "Create CostEstimate component displaying estimated API costs per task and totals",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/CostEstimate.tsx"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-7",
+          "description": "Create DateRangeFilter component for filtering all dashboard data",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/DateRangeFilter.tsx"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-4-8",
+          "description": "Create analytics components index file for clean exports",
+          "service": "auto-claude-ui",
+          "files_to_modify": [],
+          "files_to_create": ["src/renderer/components/analytics/index.ts"],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-5-navigation",
+      "name": "Sidebar Navigation Integration",
+      "type": "implementation",
+      "description": "Add Analytics view to the sidebar navigation and App routing",
+      "depends_on": ["phase-4-dashboard-ui"],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-5-1",
+          "description": "Add 'analytics' to SidebarView type and projectNavItems with 'Y' keyboard shortcut",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/renderer/components/Sidebar.tsx"],
+          "files_to_create": [],
+          "patterns_from": ["src/renderer/components/Sidebar.tsx"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-5-2",
+          "description": "Add Analytics view routing to App.tsx main content area",
+          "service": "auto-claude-ui",
+          "files_to_modify": ["src/renderer/App.tsx"],
+          "files_to_create": [],
+          "patterns_from": ["src/renderer/App.tsx"],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npx tsc --noEmit",
+            "expected": "No type errors"
+          },
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "phase-6-integration",
+      "name": "Integration & Verification",
+      "type": "integration",
+      "description": "Verify all components work together and the dashboard is functional",
+      "depends_on": ["phase-5-navigation"],
+      "parallel_safe": false,
+      "subtasks": [
+        {
+          "id": "subtask-6-1",
+          "description": "End-to-end verification: run dev server and test analytics dashboard renders with data",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "browser",
+            "url": "http://localhost:3000",
+            "checks": [
+              "Select a project",
+              "Click Analytics in sidebar (or press Y)",
+              "Dashboard renders with metrics cards",
+              "Charts display (may be empty if no data)",
+              "No console errors"
+            ]
+          },
+          "status": "pending"
+        },
+        {
+          "id": "subtask-6-2",
+          "description": "Verify existing tests still pass after changes",
+          "all_services": true,
+          "files_to_modify": [],
+          "files_to_create": [],
+          "patterns_from": [],
+          "verification": {
+            "type": "command",
+            "command": "cd auto-claude-ui && npm test",
+            "expected": "All tests pass"
+          },
+          "status": "pending"
+        }
+      ]
+    }
+  ],
+  "final_acceptance": [
+    "Analytics view accessible from sidebar navigation with 'Y' keyboard shortcut",
+    "Metrics overview cards display: total tasks, success rate, avg completion time, estimated total cost",
+    "Success rate chart shows historical task outcomes over time",
+    "Phase timing breakdown visualizes time spent in planning/coding/QA phases",
+    "QA iteration metrics displayed with average and distribution",
+    "Cost estimates shown per task and in aggregate",
+    "Task history table with sorting and filtering functionality",
+    "Date range filter affects all dashboard components",
+    "Empty states handled gracefully when no data exists",
+    "No console errors in development or production builds",
+    "Existing tests still pass"
+  ],
+  "summary": {
+    "total_phases": 6,
+    "total_subtasks": 17,
+    "services_involved": ["auto-claude-ui"],
+    "parallelism": {
+      "max_parallel_phases": 2,
+      "parallel_groups": [
+        {
+          "phases": ["phase-2-ipc-handlers", "phase-3-charting"],
+          "reason": "Both depend only on phase-1, no file conflicts"
+        }
+      ],
+      "recommended_workers": 1,
+      "speedup_estimate": "Minimal - mostly sequential due to UI component dependencies"
+    },
+    "startup_command": "source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 021 --parallel 1"
+  },
+  "verification_strategy": {
+    "risk_level": "low",
+    "skip_validation": false,
+    "test_creation_phase": "post_implementation",
+    "test_types_required": ["unit"],
+    "security_scanning_required": false,
+    "staging_deployment_required": false,
+    "acceptance_criteria": [
+      "All existing tests pass",
+      "TypeScript compiles without errors",
+      "Dashboard renders in browser",
+      "No console errors during runtime"
+    ],
+    "verification_steps": [
+      {
+        "name": "TypeScript Check",
+        "command": "cd auto-claude-ui && npx tsc --noEmit",
+        "expected_outcome": "No type errors",
+        "type": "build",
+        "required": true,
+        "blocking": true
+      },
+      {
+        "name": "Unit Tests",
+        "command": "cd auto-claude-ui && npm test",
+        "expected_outcome": "All tests pass",
+        "type": "test",
+        "required": true,
+        "blocking": true
+      }
+    ],
+    "reasoning": "Low risk additive feature - unit tests for data aggregation logic, TypeScript checks for type safety"
+  },
+  "qa_acceptance": {
+    "unit_tests": {
+      "required": true,
+      "commands": ["cd auto-claude-ui && npm test"],
+      "minimum_coverage": null
+    },
+    "integration_tests": {
+      "required": false,
+      "commands": [],
+      "services_to_test": []
+    },
+    "e2e_tests": {
+      "required": false,
+      "commands": [],
+      "flows": []
+    },
+    "browser_verification": {
+      "required": true,
+      "pages": [
+        {
+          "url": "http://localhost:3000",
+          "checks": ["Select project", "Click Analytics in sidebar", "Dashboard renders", "No console errors"]
+        }
+      ]
+    },
+    "database_verification": {
+      "required": false,
+      "checks": []
+    }
+  },
+  "qa_signoff": null,
+  "created_at": "2025-12-17T00:30:00.000Z",
+  "updated_at": "2025-12-17T00:30:00.000Z",
+  "spec_file": "spec.md"
+}

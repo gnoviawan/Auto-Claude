@@ -1,0 +1,60 @@
+{
+  "task_description": "Create a comprehensive analytics dashboard that displays agent performance metrics including success rates, time per phase, QA iteration counts, and cost tracking.",
+  "scoped_services": ["auto-claude-ui"],
+  "files_to_modify": {
+    "auto-claude-ui": [
+      "src/shared/types/index.ts",
+      "src/shared/constants/ipc.ts",
+      "src/main/ipc-handlers/index.ts",
+      "src/preload/api/index.ts",
+      "src/renderer/components/Sidebar.tsx",
+      "src/renderer/App.tsx",
+      "package.json"
+    ]
+  },
+  "files_to_create": {
+    "auto-claude-ui": [
+      "src/shared/types/analytics.ts",
+      "src/renderer/stores/analytics-store.ts",
+      "src/main/ipc-handlers/analytics-handlers.ts",
+      "src/preload/api/modules/analytics-api.ts",
+      "src/renderer/components/Analytics.tsx",
+      "src/renderer/components/analytics/MetricsOverview.tsx",
+      "src/renderer/components/analytics/SuccessRateChart.tsx",
+      "src/renderer/components/analytics/PhaseTimingChart.tsx",
+      "src/renderer/components/analytics/TaskHistory.tsx",
+      "src/renderer/components/analytics/CostEstimate.tsx",
+      "src/renderer/components/analytics/DateRangeFilter.tsx",
+      "src/renderer/components/analytics/index.ts"
+    ]
+  },
+  "files_to_reference": [
+    "auto-claude-ui/src/shared/types/task.ts",
+    "auto-claude-ui/src/shared/types/insights.ts",
+    "auto-claude-ui/src/renderer/stores/task-store.ts",
+    "auto-claude-ui/src/renderer/stores/insights-store.ts",
+    "auto-claude-ui/src/renderer/components/Insights.tsx",
+    "auto-claude-ui/src/main/ipc-handlers/insights-handlers.ts",
+    "auto-claude-ui/src/preload/api/modules/insights-api.ts",
+    "auto-claude-ui/src/renderer/components/task-detail/TaskProgress.tsx"
+  ],
+  "patterns": {
+    "zustand_store": "Use create() from zustand, define state interface, export async action functions separately",
+    "page_component": "Accept projectId prop, use store hooks, flex layout with optional sidebar, load data in useEffect",
+    "sidebar_nav": "Add to SidebarView type union, add NavItem with icon/label/shortcut, shortcut handled by useEffect listener",
+    "ipc_handler": "Register in ipc-handlers/index.ts, use ipcMain.handle for request-response, get project from projectStore",
+    "preload_api": "Define interface, create factory function, use invokeIpc/createIpcListener from ipc-utils"
+  },
+  "existing_implementations": {
+    "description": "Data for analytics already exists in task files",
+    "data_sources": [
+      "implementation_plan.json - phases, subtasks, qa_iteration_history, qa_stats, status, created_at, updated_at",
+      "task_logs.json - phase timing (started_at, completed_at), entries with timestamps"
+    ],
+    "missing_data": [
+      "Token usage - not currently tracked",
+      "Actual cost - will need estimation based on model and duration"
+    ]
+  },
+  "created_at": "2025-12-17T00:30:00.000Z"
+}
