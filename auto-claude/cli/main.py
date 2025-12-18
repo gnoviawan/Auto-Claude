@@ -222,6 +222,26 @@ Environment Variables:
         help="Remove all spec worktrees and their branches (with confirmation)",
     )
 
+    # BMAD installation
+    parser.add_argument(
+        "--install-bmad",
+        action="store_true",
+        help="Install BMAD Method framework to the project",
+    )
+    parser.add_argument(
+        "--update-bmad",
+        action="store_true",
+        help="Update existing BMAD installation (preserves configuration)",
+    )
+
+    # Framework selection
+    parser.add_argument(
+        "--framework",
+        type=str,
+        choices=["bmad", "native"],
+        help="Framework to use: 'bmad' (BMAD Method) or 'native' (Auto Claude native). Auto-detected from spec if not specified.",
+    )
+
     # Force bypass
     parser.add_argument(
         "--force",
@@ -281,6 +301,20 @@ def main() -> None:
     # Handle --cleanup-worktrees command
     if args.cleanup_worktrees:
         handle_cleanup_worktrees_command(project_dir)
+        return
+
+    # Handle --install-bmad command
+    if args.install_bmad:
+        from .bmad_commands import handle_install_bmad_command
+
+        handle_install_bmad_command(project_dir, force=args.force)
+        return
+
+    # Handle --update-bmad command
+    if args.update_bmad:
+        from .bmad_commands import handle_update_bmad_command
+
+        handle_update_bmad_command(project_dir)
         return
 
     # Require --spec if not listing
@@ -375,6 +409,7 @@ def main() -> None:
         skip_qa=args.skip_qa,
         force_bypass_approval=args.force,
         base_branch=args.base_branch,
+        framework=args.framework,
     )
 
 

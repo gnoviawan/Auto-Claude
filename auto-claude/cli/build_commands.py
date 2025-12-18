@@ -61,6 +61,7 @@ def handle_build_command(
     skip_qa: bool,
     force_bypass_approval: bool,
     base_branch: str | None = None,
+    framework: str | None = None,
 ) -> None:
     """
     Handle the main build command.
@@ -165,6 +166,48 @@ def handle_build_command(
             "run.py", "Review approval validated", approved_by=review_state.approved_by
         )
 
+    # Detect framework (from CLI arg or implementation_plan.json)
+    import json
+
+    detected_framework = "native"  # default
+    plan_file = spec_dir / "implementation_plan.json"
+
+    if plan_file.exists():
+        try:
+            plan_data = json.loads(plan_file.read_text())
+            detected_framework = plan_data.get("framework", "native")
+        except Exception:
+            pass  # Use default if parsing fails
+
+    # Override from CLI if provided
+    active_framework = framework or detected_framework
+
+    print(f"Framework: {active_framework}")
+    print()
+
+    # Route to BMAD development if framework is BMAD
+    if active_framework == "bmad":
+        from bmad_task_integration import run_bmad_development
+
+        try:
+            run_bmad_development(
+                project_dir=project_dir,
+                spec_dir=spec_dir,
+                model=model,
+                max_iterations=max_iterations,
+                verbose=verbose,
+                auto_continue=auto_continue,
+                skip_qa=skip_qa,
+                base_branch=base_branch,
+            )
+            return
+        except Exception as e:
+            print(f"\n{icon(Icons.ERROR)} BMAD development failed: {e}")
+            import traceback
+            traceback.print_exc()
+            sys.exit(1)
+
+    # Continue with native Auto Claude build
     # Check for existing build
     if get_existing_build_worktree(project_dir, spec_dir.name):
         if auto_continue:

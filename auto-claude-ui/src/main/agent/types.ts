@@ -44,6 +44,7 @@ export interface TaskExecutionOptions {
   parallel?: boolean;
   workers?: number;
   baseBranch?: string;
+  framework?: 'bmad' | 'native';
 }
 
 export interface SpecCreationMetadata {
@@ -65,6 +66,8 @@ export interface SpecCreationMetadata {
   // Non-auto profile - single model and thinking level
   model?: 'haiku' | 'sonnet' | 'opus';
   thinkingLevel?: 'none' | 'low' | 'medium' | 'high' | 'ultrathink';
+  // Planning framework selection
+  framework?: 'bmad' | 'native';
 }
 
 export interface IdeationProgressData {
