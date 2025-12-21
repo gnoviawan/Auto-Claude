@@ -20,6 +20,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -519,8 +520,6 @@ def infer_entity_type(name: str) -> str:
 
 def extract_session_number(name: str) -> int | None:
     """Extract session number from episode name."""
-    import re
-
     match = re.search(r"session[_-]?(\d+)", name or "", re.IGNORECASE)
     if match:
         try:

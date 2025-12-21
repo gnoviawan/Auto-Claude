@@ -133,6 +133,28 @@ class GraphitiMemory:
             logger.info("Graphiti not available - skipping initialization")
             return False
 
+        # Check for provider changes
+        if self.state and self.state.has_provider_changed(self.config):
+            migration_info = self.state.get_migration_info(self.config)
+            logger.warning(
+                f"⚠️  Embedding provider changed: {migration_info['old_provider']} → {migration_info['new_provider']}"
+            )
+            logger.warning(
+                f"   This requires migration to prevent dimension mismatch errors."
+            )
+            logger.warning(
+                f"   Episodes in old database: {migration_info['episode_count']}"
+            )
+            logger.warning(
+                f"   Run: python integrations/graphiti/migrate_embeddings.py"
+            )
+            logger.warning(
+                f"   Or start fresh by removing: {self.spec_dir / '.graphiti_state.json'}"
+            )
+            # Continue with new provider (will use new database)
+            # Reset state to use new provider
+            self.state = None
+
         try:
             # Create client
             self._client = GraphitiClient(self.config)
