@@ -73,9 +73,8 @@
 - electron mcp for validation and testing (E2E) by @AndyMik90 in 9a03814
 - fix: remove ANTHROPIC_API_KEY fallback to prevent silent billing by @AndyMik90 in c52caa6
 - fix: improve competitor analysis UX and fix stop error by @AndyMik90 in 12c8519
-- fix: improve competitor analysis UX and fix stop error by @AndyMik90 in 8bcd00e
 
-## 2.6.0 - Improved User Experience and Agent Configuration
+## 2.6.1 - Improved User Experience and Agent Configuration
 
 ### ✨ New Features
 
