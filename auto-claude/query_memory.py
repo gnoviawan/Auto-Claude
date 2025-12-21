@@ -247,7 +247,9 @@ def cmd_search(args):
             LIMIT $limit
         """
 
-        result = conn.execute(query, parameters={"search_query": search_query, "limit": limit})
+        result = conn.execute(
+            query, parameters={"search_query": search_query, "limit": limit}
+        )
         df = result.get_as_df()
 
         memories = []

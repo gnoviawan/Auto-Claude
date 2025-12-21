@@ -113,7 +113,9 @@ class PatchedKuzuDriver(OriginalKuzuDriver):
                             )
                             try:
                                 conn.execute(drop_query)
-                                logger.debug(f"Dropped existing FTS index: {index_name}")
+                                logger.debug(
+                                    f"Dropped existing FTS index: {index_name}"
+                                )
                             except Exception:
                                 # Index might not exist, that's fine
                                 pass

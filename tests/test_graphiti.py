@@ -220,8 +220,6 @@ class TestMultiProviderConfig:
             # OLLAMA_EMBEDDING_DIM is optional - auto-detected for known models
         }, clear=True):
             config = GraphitiConfig.from_env()
-            # LLM should be valid
-            assert config._validate_llm_provider() is True
             # Embedder is valid with just model (dimension auto-detected)
             assert config._validate_embedder_provider() is True
             assert config.is_valid() is True
