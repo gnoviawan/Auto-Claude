@@ -67,15 +67,47 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd auto-claude-ui
+          mkdir -p notarization-logs
           for dmg in dist/*.dmg; do
-            echo "Notarizing $dmg..."
-            xcrun notarytool submit "$dmg" \
+            dmg_name=$(basename "$dmg")
+            echo "Notarizing $dmg_name..."
+
+            # Submit and capture output to get submission ID
+            output=$(xcrun notarytool submit "$dmg" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_APP_SPECIFIC_PASSWORD" \
               --team-id "$APPLE_TEAM_ID" \
-              --wait
-            xcrun stapler staple "$dmg"
+              --wait 2>&1) || true
+
+            # Extract submission ID and check status (don't print full output to keep logs clean)
+            submission_id=$(echo "$output" | grep -oE 'id: [a-f0-9-]+' | head -1 | cut -d' ' -f2)
+            status=$(echo "$output" | grep -oE 'status: [A-Za-z]+' | tail -1 | cut -d' ' -f2)
+
+            echo "Submission ID: $submission_id"
+            echo "Status: $status"
+
+            # If notarization failed, save detailed log to file (not public logs)
+            if [ "$status" != "Accepted" ] && [ -n "$submission_id" ]; then
+              echo "Saving detailed notarization log to artifact..."
+              xcrun notarytool log "$submission_id" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" \
+                > "notarization-logs/${dmg_name}.json" 2>&1 || true
+              echo "::error::Notarization failed for $dmg_name. Download 'notarization-logs' artifact for details."
+            else
+              xcrun stapler staple "$dmg"
+              echo "Successfully notarized and stapled $dmg_name"
+            fi
           done
+
+      - name: Upload notarization logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notarization-logs
+          path: auto-claude-ui/notarization-logs/
+          if-no-files-found: ignore
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
