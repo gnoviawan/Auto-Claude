@@ -48,8 +48,11 @@ Environment Variables:
     # Ollama (local)
     OLLAMA_BASE_URL: Ollama server URL (default: http://localhost:11434)
     OLLAMA_LLM_MODEL: Model for LLM (e.g., deepseek-r1:7b)
-    OLLAMA_EMBEDDING_MODEL: Model for embeddings (e.g., nomic-embed-text)
-    OLLAMA_EMBEDDING_DIM: Embedding dimension (required for Ollama, e.g., 768)
+    OLLAMA_EMBEDDING_MODEL: Model for embeddings. Supported models with auto-detected dimensions:
+        - embeddinggemma (768) - Google's lightweight embedding model
+        - qwen3-embedding:0.6b (1024), :4b (2560), :8b (4096) - Qwen3 series
+        - nomic-embed-text (768), mxbai-embed-large (1024), bge-large (1024)
+    OLLAMA_EMBEDDING_DIM: Override dimension (optional if using known model)
 """
 
 import json
@@ -283,7 +286,8 @@ class GraphitiConfig:
                 and self.azure_openai_embedding_deployment
             )
         elif self.embedder_provider == "ollama":
-            return bool(self.ollama_embedding_model and self.ollama_embedding_dim)
+            # Only require model - dimension is auto-detected for known models
+            return bool(self.ollama_embedding_model)
         elif self.embedder_provider == "google":
             return bool(self.google_api_key)
         return False
@@ -348,8 +352,7 @@ class GraphitiConfig:
                 errors.append(
                     "Ollama embedder provider requires OLLAMA_EMBEDDING_MODEL"
                 )
-            if not self.ollama_embedding_dim:
-                errors.append("Ollama embedder provider requires OLLAMA_EMBEDDING_DIM")
+            # Note: OLLAMA_EMBEDDING_DIM is optional - auto-detected for known models
         elif self.embedder_provider == "google":
             if not self.google_api_key:
                 errors.append("Google embedder provider requires GOOGLE_API_KEY")

@@ -336,9 +336,7 @@ class GraphitiMemory:
             "enabled": self.is_enabled,
             "initialized": self.is_initialized,
             "database": self.config.database if self.is_enabled else None,
-            "host": f"{self.config.falkordb_host}:{self.config.falkordb_port}"
-            if self.is_enabled
-            else None,
+            "db_path": self.config.db_path if self.is_enabled else None,
             "group_id": self.group_id,
             "group_id_mode": self.group_id_mode,
             "llm_provider": self.config.llm_provider if self.is_enabled else None,

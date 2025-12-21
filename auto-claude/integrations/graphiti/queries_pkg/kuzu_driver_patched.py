@@ -33,6 +33,15 @@ class PatchedKuzuDriver(OriginalKuzuDriver):
     2. None parameters are filtered out, causing "Parameter not found" errors
     """
 
+    def __init__(
+        self,
+        db: str = ':memory:',
+        max_concurrent_queries: int = 1,
+    ):
+        # Store database path before calling parent (which creates the Database)
+        self._database = db  # Required by Graphiti for group_id checks
+        super().__init__(db, max_concurrent_queries)
+
     async def execute_query(
         self, cypher_query_: str, **kwargs: Any
     ) -> tuple[list[dict[str, Any]] | list[list[dict[str, Any]]], None, None]:
