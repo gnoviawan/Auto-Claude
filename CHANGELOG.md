@@ -1,3 +1,80 @@
+## 2.6.5 - Quality & Stability Improvements
+
+![changelog-1766275550178.png](.github/assets/changelog-1766275550178.png)
+
+### ✨ New Features
+
+- Dynamic MCP tool injection based on project type for enhanced QA automation
+
+- Kanban roadmap refactored with status-based columns and delete functionality for improved project management
+
+- User-configurable model and thinking level settings for feature generation phases
+
+### 🛠️ Improvements
+
+- Enhanced QA validation with self-correction feedback loop to prevent infinite retry cycles
+
+- Dynamic prompt injection in QA phase for better context-aware testing
+
+- Improved competitor analysis UX with better error handling
+
+- Unified DEBUG environment variable handling across the codebase
+
+- Refactored to use package.json as single source of truth for version management
+
+- Device code regex pattern updated to enforce separator and normalize GitHub authentication output
+
+### 🐛 Bug Fixes
+
+- Resolved CI linting issues and test failures for stable builds
+
+- Fixed CodeRabbit review feedback across multiple PRs
+
+- Fixed browser tool selection in QA phase for reliable automation
+
+- Added null check for roadmap.targetAudience to prevent crashes
+
+- Fixed target_audience validation in roadmap configuration
+
+- Resolved black screen issue when opening Custom Model modal
+
+- Fixed ENAMETOOLONG error on Windows by using temporary files for insights history
+
+- Removed ANTHROPIC_API_KEY fallback to prevent accidental billing charges
+
+- Resolved multiple bugs from GitHub issues for improved stability
+
+- Added Electron MCP for validation and end-to-end testing capabilities
+
+---
+
+## What's Changed
+
+- fix: address CI linting issues by @AndyMik90 in 06fc5da
+- fix: address remaining CodeRabbit review feedback by @AndyMik90 in a960f00
+- chore: update version to 2.6.5 in package.json and package-lock.json by @AndyMik90 in a052165
+- refactor: use package.json as single source of truth for version by @AndyMik90 in 57fcc24
+- fix: resolve linting errors and failing tests for CI by @AndyMik90 in c93fe96
+- fix: address CodeRabbit review feedback for PR #82 by @AndyMik90 in 6ee5a73
+- feat: refactor kanban to status-based columns with delete functionality by @AndyMik90 in f6601ef
+- fix: use dynamic prompt injection and fix browser tool selection by @AndyMik90 in a03fa8b
+- fix: add self-correction feedback loop to prevent infinite retries by @AndyMik90 in 50f739d
+- fix: validate target_audience in roadmap and unify DEBUG env var by @AndyMik90 in 1423878
+- fix: add null check for roadmap.targetAudience to prevent crash by @AndyMik90 in 39a08f6
+- feat: add user-configurable model and thinking level for features by @AndyMik90 in 87e12cf
+- refactor: update default phase models and thinking configurations by @AndyMik90 in 4c8dfca
+- fix: address CodeRabbit review feedback by @AndyMik90 in 17b092b
+- chore: apply ruff formatting and fix lint errors by @AndyMik90 in 4b09b0c
+- fix: use temp file for insights history to avoid ENAMETOOLONG by @AndyMik90 in 252d4cc
+- fix: update device code regex pattern to enforce separator and normalize output by @AndyMik90 in 721b127
+- feat: add dynamic MCP tool injection based on project type by @AndyMik90 in 757e5e0
+- fix: resolve black screen when opening Custom Model modal by @AndyMik90 in 1d1e154
+- fix: resolve multiple bugs from GitHub issues by @AndyMik90 in 69d5c73
+- electron mcp for validation and testing (E2E) by @AndyMik90 in 9a03814
+- fix: remove ANTHROPIC_API_KEY fallback to prevent silent billing by @AndyMik90 in c52caa6
+- fix: improve competitor analysis UX and fix stop error by @AndyMik90 in 12c8519
+- fix: improve competitor analysis UX and fix stop error by @AndyMik90 in 8bcd00e
+
 ## 2.6.0 - Improved User Experience and Agent Configuration
 
 ### ✨ New Features
