@@ -54,12 +54,11 @@ const EMBEDDING_PROVIDERS: Array<{
   description: string;
   requiresApiKey: boolean;
 }> = [
+  { id: 'ollama', name: 'Ollama', description: 'Local embeddings (free)', requiresApiKey: false },
   { id: 'openai', name: 'OpenAI', description: 'text-embedding-3-small (recommended)', requiresApiKey: true },
   { id: 'voyage', name: 'Voyage AI', description: 'voyage-3 (great with Anthropic)', requiresApiKey: true },
   { id: 'google', name: 'Google AI', description: 'Gemini text-embedding-004', requiresApiKey: true },
-  { id: 'huggingface', name: 'HuggingFace', description: 'Open source models', requiresApiKey: true },
-  { id: 'azure_openai', name: 'Azure OpenAI', description: 'Enterprise Azure embeddings', requiresApiKey: true },
-  { id: 'ollama', name: 'Ollama', description: 'Local embeddings (free)', requiresApiKey: false }
+  { id: 'azure_openai', name: 'Azure OpenAI', description: 'Enterprise Azure embeddings', requiresApiKey: true }
 ];
 
 interface GraphitiConfig {
@@ -195,9 +194,6 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
     }
     if (llmProvider === 'groq') {
       if (!config.groqApiKey.trim()) return 'Groq API key';
-    }
-    if (embeddingProvider === 'huggingface') {
-      if (!config.huggingfaceApiKey.trim()) return 'HuggingFace API key';
     }
     if (llmProvider === 'ollama') {
       if (!config.ollamaLlmModel.trim()) return 'Ollama LLM model name';
@@ -357,7 +353,6 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
     const needsVoyage = embeddingProvider === 'voyage';
     const needsGoogle = llmProvider === 'google' || embeddingProvider === 'google';
     const needsGroq = llmProvider === 'groq';
-    const needsHuggingFace = embeddingProvider === 'huggingface';
     const needsOllama = llmProvider === 'ollama' || embeddingProvider === 'ollama';
 
     return (
@@ -604,39 +599,6 @@ export function GraphitiStep({ onNext, onBack, onSkip }: GraphitiStepProps) {
               Get your key from{' '}
               <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
                 Groq Console
-              </a>
-            </p>
-          </div>
-        )}
-
-        {/* HuggingFace API Key */}
-        {needsHuggingFace && (
-          <div className="space-y-2">
-            <Label htmlFor="huggingface-key" className="text-sm font-medium text-foreground">
-              HuggingFace API Key
-            </Label>
-            <div className="relative">
-              <Input
-                id="huggingface-key"
-                type={showApiKey['huggingface'] ? 'text' : 'password'}
-                value={config.huggingfaceApiKey}
-                onChange={(e) => setConfig(prev => ({ ...prev, huggingfaceApiKey: e.target.value }))}
-                placeholder="hf_..."
-                className="pr-10 font-mono text-sm"
-                disabled={isSaving || isValidating}
-              />
-              <button
-                type="button"
-                onClick={() => toggleShowApiKey('huggingface')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showApiKey['huggingface'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Get your key from{' '}
-              <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
-                HuggingFace
               </a>
             </p>
           </div>

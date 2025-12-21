@@ -51,6 +51,20 @@ interface OllamaEmbeddingModel {
   size_gb: number;
 }
 
+interface OllamaRecommendedModel {
+  name: string;
+  description: string;
+  size_estimate: string;
+  dim: number;
+  installed: boolean;
+}
+
+interface OllamaPullResult {
+  model: string;
+  status: 'completed' | 'failed';
+  output: string[];
+}
+
 /**
  * Execute the ollama_model_detector.py script
  */
@@ -411,6 +425,96 @@ export function registerMemoryHandlers(): void {
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Failed to list embedding models',
+        };
+      }
+    }
+  );
+
+  // Pull (download) an Ollama model
+  ipcMain.handle(
+    IPC_CHANNELS.OLLAMA_PULL_MODEL,
+    async (
+      _,
+      modelName: string,
+      baseUrl?: string
+    ): Promise<IPCResult<OllamaPullResult>> => {
+      try {
+        const pythonCmd = findPythonCommand();
+        if (!pythonCmd) {
+          return { success: false, error: 'Python not found' };
+        }
+
+        // Find the ollama_model_detector.py script
+        const possiblePaths = [
+          path.resolve(__dirname, '..', '..', '..', 'auto-claude', 'ollama_model_detector.py'),
+          path.resolve(process.cwd(), 'auto-claude', 'ollama_model_detector.py'),
+          path.resolve(process.cwd(), '..', 'auto-claude', 'ollama_model_detector.py'),
+        ];
+
+        let scriptPath: string | null = null;
+        for (const p of possiblePaths) {
+          if (fs.existsSync(p)) {
+            scriptPath = p;
+            break;
+          }
+        }
+
+        if (!scriptPath) {
+          return { success: false, error: 'ollama_model_detector.py script not found' };
+        }
+
+        const [pythonExe, baseArgs] = parsePythonCommand(pythonCmd);
+        const args = [...baseArgs, scriptPath, 'pull-model', modelName];
+
+        return new Promise((resolve) => {
+          const proc = spawn(pythonExe, args, {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            timeout: 600000, // 10 minute timeout for large models
+          });
+
+          let stdout = '';
+          let stderr = '';
+
+          proc.stdout.on('data', (data) => {
+            stdout += data.toString();
+          });
+
+          proc.stderr.on('data', (data) => {
+            stderr += data.toString();
+            // Could emit progress events here in the future
+          });
+
+          proc.on('close', (code) => {
+            if (code === 0 && stdout) {
+              try {
+                const result = JSON.parse(stdout);
+                if (result.success) {
+                  resolve({
+                    success: true,
+                    data: result.data as OllamaPullResult,
+                  });
+                } else {
+                  resolve({
+                    success: false,
+                    error: result.error || 'Failed to pull model',
+                  });
+                }
+              } catch {
+                resolve({ success: false, error: `Invalid JSON: ${stdout}` });
+              }
+            } else {
+              resolve({ success: false, error: stderr || `Exit code ${code}` });
+            }
+          });
+
+          proc.on('error', (err) => {
+            resolve({ success: false, error: err.message });
+          });
+        });
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to pull model',
         };
       }
     }

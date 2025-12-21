@@ -83,7 +83,7 @@ interface StatusResult {
  * Get the default database path
  */
 export function getDefaultDbPath(): string {
-  return path.join(os.homedir(), '.auto-claude', 'graphs');
+  return path.join(os.homedir(), '.auto-claude', 'memories');
 }
 
 /**

@@ -90,6 +90,15 @@ export const infrastructureMock = {
     }
   }),
 
+  pullOllamaModel: async (modelName: string) => ({
+    success: true,
+    data: {
+      model: modelName,
+      status: 'completed' as const,
+      output: [`Pulling ${modelName}...`, 'Pull complete']
+    }
+  }),
+
   // Ideation Operations
   getIdeation: async () => ({
     success: true,

@@ -1,14 +1,20 @@
+import { useState, useEffect, useCallback } from 'react';
 import {
   Database,
   Eye,
   EyeOff,
   ChevronDown,
   ChevronUp,
-  Globe
+  Globe,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
+import { Button } from '../ui/button';
 import {
   Select,
   SelectContent,
@@ -17,7 +23,14 @@ import {
   SelectValue
 } from '../ui/select';
 import { Separator } from '../ui/separator';
-import type { ProjectEnvConfig, ProjectSettings as ProjectSettingsType } from '../../../shared/types';
+import type { ProjectEnvConfig, ProjectSettings as ProjectSettingsType, GraphitiEmbeddingProvider } from '../../../shared/types';
+
+interface OllamaEmbeddingModel {
+  name: string;
+  embedding_dim: number | null;
+  description: string;
+  size_gb: number;
+}
 
 interface SecuritySettingsProps {
   envConfig: ProjectEnvConfig | null;
@@ -44,7 +57,415 @@ export function SecuritySettings({
   expanded,
   onToggle
 }: SecuritySettingsProps) {
+  // Password visibility for multiple providers
+  const [showApiKey, setShowApiKey] = useState<Record<string, boolean>>({
+    openai: showOpenAIKey,
+    voyage: false,
+    google: false,
+    azure: false
+  });
+
+  // Ollama model detection state
+  const [ollamaModels, setOllamaModels] = useState<OllamaEmbeddingModel[]>([]);
+  const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'checking' | 'connected' | 'disconnected'>('idle');
+  const [ollamaError, setOllamaError] = useState<string | null>(null);
+
+  const embeddingProvider = envConfig?.graphitiProviderConfig?.embeddingProvider || 'ollama';
+  const ollamaBaseUrl = envConfig?.graphitiProviderConfig?.ollamaBaseUrl || 'http://localhost:11434';
+
+  // Toggle API key visibility
+  const toggleShowApiKey = (key: string) => {
+    setShowApiKey(prev => ({ ...prev, [key]: !prev[key] }));
+    // Sync with parent for OpenAI
+    if (key === 'openai') {
+      setShowOpenAIKey(!showApiKey.openai);
+    }
+  };
+
+  // Detect Ollama embedding models
+  const detectOllamaModels = useCallback(async () => {
+    if (!envConfig?.graphitiEnabled || embeddingProvider !== 'ollama') return;
+
+    setOllamaStatus('checking');
+    setOllamaError(null);
+
+    try {
+      // Check Ollama status first
+      const statusResult = await window.electronAPI.checkOllamaStatus(ollamaBaseUrl);
+      if (!statusResult.success || !statusResult.data?.running) {
+        setOllamaStatus('disconnected');
+        setOllamaError(statusResult.data?.message || 'Ollama is not running');
+        return;
+      }
+
+      // Get embedding models
+      const modelsResult = await window.electronAPI.listOllamaEmbeddingModels(ollamaBaseUrl);
+      if (!modelsResult.success) {
+        setOllamaStatus('connected');
+        setOllamaError(modelsResult.error || 'Failed to list models');
+        return;
+      }
+
+      setOllamaModels(modelsResult.data?.embedding_models || []);
+      setOllamaStatus('connected');
+    } catch (err) {
+      setOllamaStatus('disconnected');
+      setOllamaError(err instanceof Error ? err.message : 'Failed to detect Ollama models');
+    }
+  }, [envConfig?.graphitiEnabled, embeddingProvider, ollamaBaseUrl]);
+
+  // Auto-detect when Ollama is selected
+  useEffect(() => {
+    if (embeddingProvider === 'ollama' && envConfig?.graphitiEnabled) {
+      detectOllamaModels();
+    }
+  }, [embeddingProvider, envConfig?.graphitiEnabled, detectOllamaModels]);
+
   if (!envConfig) return null;
+
+  // Render provider-specific configuration fields
+  const renderProviderFields = () => {
+    // OpenAI
+    if (embeddingProvider === 'openai') {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-foreground">
+              OpenAI API Key {envConfig.openaiKeyIsGlobal ? '(Override)' : ''}
+            </Label>
+            {envConfig.openaiKeyIsGlobal && (
+              <span className="flex items-center gap-1 text-xs text-info">
+                <Globe className="h-3 w-3" />
+                Using global key
+              </span>
+            )}
+          </div>
+          {envConfig.openaiKeyIsGlobal ? (
+            <p className="text-xs text-muted-foreground">
+              Using key from App Settings. Enter a project-specific key below to override.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Required for OpenAI embeddings
+            </p>
+          )}
+          <div className="relative">
+            <Input
+              type={showApiKey['openai'] ? 'text' : 'password'}
+              placeholder={envConfig.openaiKeyIsGlobal ? 'Enter to override global key...' : 'sk-xxxxxxxx'}
+              value={envConfig.openaiKeyIsGlobal ? '' : (envConfig.openaiApiKey || '')}
+              onChange={(e) => updateEnvConfig({ openaiApiKey: e.target.value || undefined })}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => toggleShowApiKey('openai')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showApiKey['openai'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Get your key from{' '}
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+              OpenAI
+            </a>
+          </p>
+        </div>
+      );
+    }
+
+    // Voyage AI
+    if (embeddingProvider === 'voyage') {
+      return (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">Voyage AI API Key</Label>
+          <p className="text-xs text-muted-foreground">
+            Required for Voyage AI embeddings
+          </p>
+          <div className="relative">
+            <Input
+              type={showApiKey['voyage'] ? 'text' : 'password'}
+              value={envConfig.graphitiProviderConfig?.voyageApiKey || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'voyage',
+                  voyageApiKey: e.target.value || undefined,
+                }
+              })}
+              placeholder="pa-xxxxxxxx"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => toggleShowApiKey('voyage')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showApiKey['voyage'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Get your key from{' '}
+            <a href="https://dash.voyageai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+              Voyage AI
+            </a>
+          </p>
+          <div className="space-y-1 mt-3">
+            <Label className="text-xs text-muted-foreground">Embedding Model (optional)</Label>
+            <Input
+              placeholder="voyage-3"
+              value={envConfig.graphitiProviderConfig?.voyageEmbeddingModel || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'voyage',
+                  voyageEmbeddingModel: e.target.value || undefined,
+                }
+              })}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Google AI
+    if (embeddingProvider === 'google') {
+      return (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">Google AI API Key</Label>
+          <p className="text-xs text-muted-foreground">
+            Required for Google AI embeddings
+          </p>
+          <div className="relative">
+            <Input
+              type={showApiKey['google'] ? 'text' : 'password'}
+              value={envConfig.graphitiProviderConfig?.googleApiKey || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'google',
+                  googleApiKey: e.target.value || undefined,
+                }
+              })}
+              placeholder="AIzaSy..."
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => toggleShowApiKey('google')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showApiKey['google'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Get your key from{' '}
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+              Google AI Studio
+            </a>
+          </p>
+        </div>
+      );
+    }
+
+    // Azure OpenAI
+    if (embeddingProvider === 'azure_openai') {
+      return (
+        <div className="space-y-3 p-3 rounded-md bg-muted/50">
+          <Label className="text-sm font-medium text-foreground">Azure OpenAI Configuration</Label>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">API Key</Label>
+            <div className="relative">
+              <Input
+                type={showApiKey['azure'] ? 'text' : 'password'}
+                value={envConfig.graphitiProviderConfig?.azureOpenaiApiKey || ''}
+                onChange={(e) => updateEnvConfig({
+                  graphitiProviderConfig: {
+                    ...envConfig.graphitiProviderConfig,
+                    embeddingProvider: 'azure_openai',
+                    azureOpenaiApiKey: e.target.value || undefined,
+                  }
+                })}
+                placeholder="Azure API Key"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => toggleShowApiKey('azure')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showApiKey['azure'] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Base URL</Label>
+            <Input
+              placeholder="https://your-resource.openai.azure.com"
+              value={envConfig.graphitiProviderConfig?.azureOpenaiBaseUrl || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'azure_openai',
+                  azureOpenaiBaseUrl: e.target.value || undefined,
+                }
+              })}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Embedding Deployment Name</Label>
+            <Input
+              placeholder="text-embedding-ada-002"
+              value={envConfig.graphitiProviderConfig?.azureOpenaiEmbeddingDeployment || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'azure_openai',
+                  azureOpenaiEmbeddingDeployment: e.target.value || undefined,
+                }
+              })}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    // Ollama (Local)
+    if (embeddingProvider === 'ollama') {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium text-foreground">Ollama Configuration</Label>
+            <div className="flex items-center gap-2">
+              {ollamaStatus === 'checking' && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Checking...
+                </span>
+              )}
+              {ollamaStatus === 'connected' && (
+                <span className="flex items-center gap-1 text-xs text-success">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Connected
+                </span>
+              )}
+              {ollamaStatus === 'disconnected' && (
+                <span className="flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" />
+                  Not running
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={detectOllamaModels}
+                disabled={ollamaStatus === 'checking'}
+                className="h-6 px-2"
+              >
+                <RefreshCw className={`h-3 w-3 ${ollamaStatus === 'checking' ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Base URL</Label>
+            <Input
+              placeholder="http://localhost:11434"
+              value={envConfig.graphitiProviderConfig?.ollamaBaseUrl || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'ollama',
+                  ollamaBaseUrl: e.target.value || undefined,
+                }
+              })}
+            />
+          </div>
+
+          {ollamaError && (
+            <div className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+              {ollamaError}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Embedding Model</Label>
+            {ollamaModels.length > 0 ? (
+              <Select
+                value={envConfig.graphitiProviderConfig?.ollamaEmbeddingModel || ''}
+                onValueChange={(value) => {
+                  const model = ollamaModels.find(m => m.name === value);
+                  updateEnvConfig({
+                    graphitiProviderConfig: {
+                      ...envConfig.graphitiProviderConfig,
+                      embeddingProvider: 'ollama',
+                      ollamaEmbeddingModel: value,
+                      ollamaEmbeddingDim: model?.embedding_dim || undefined,
+                    }
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select embedding model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ollamaModels.map((model) => (
+                    <SelectItem key={model.name} value={model.name}>
+                      <div className="flex items-center gap-2">
+                        <span>{model.name}</span>
+                        {model.embedding_dim && (
+                          <span className="text-xs text-muted-foreground">
+                            ({model.embedding_dim}d)
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                placeholder="nomic-embed-text"
+                value={envConfig.graphitiProviderConfig?.ollamaEmbeddingModel || ''}
+                onChange={(e) => updateEnvConfig({
+                  graphitiProviderConfig: {
+                    ...envConfig.graphitiProviderConfig,
+                    embeddingProvider: 'ollama',
+                    ollamaEmbeddingModel: e.target.value || undefined,
+                  }
+                })}
+              />
+            )}
+            <p className="text-xs text-muted-foreground">
+              Common models: nomic-embed-text, embeddinggemma, mxbai-embed-large
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Embedding Dimension</Label>
+            <Input
+              type="number"
+              placeholder="768"
+              value={envConfig.graphitiProviderConfig?.ollamaEmbeddingDim || ''}
+              onChange={(e) => updateEnvConfig({
+                graphitiProviderConfig: {
+                  ...envConfig.graphitiProviderConfig,
+                  embeddingProvider: 'ollama',
+                  ollamaEmbeddingDim: parseInt(e.target.value) || undefined,
+                }
+              })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required for Ollama embeddings (e.g., 768 for nomic-embed-text)
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <section className="space-y-3">
@@ -54,13 +475,13 @@ export function SecuritySettings({
       >
         <div className="flex items-center gap-2">
           <Database className="h-4 w-4" />
-          Memory Backend
+          Memory
           <span className={`px-2 py-0.5 text-xs rounded-full ${
             envConfig.graphitiEnabled
               ? 'bg-success/10 text-success'
               : 'bg-muted text-muted-foreground'
           }`}>
-            {envConfig.graphitiEnabled ? 'Graphiti' : 'File-based'}
+            {envConfig.graphitiEnabled ? 'Enabled' : 'Disabled'}
           </span>
         </div>
         {expanded ? (
@@ -74,7 +495,7 @@ export function SecuritySettings({
         <div className="space-y-4 pl-6 pt-2">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="font-normal text-foreground">Use Graphiti (Recommended)</Label>
+              <Label className="font-normal text-foreground">Enable Memory</Label>
               <p className="text-xs text-muted-foreground">
                 Persistent cross-session memory using LadybugDB (embedded database)
               </p>
@@ -92,7 +513,7 @@ export function SecuritySettings({
             <div className="rounded-lg border border-border bg-muted/30 p-3">
               <p className="text-xs text-muted-foreground">
                 Using file-based memory. Session insights are stored locally in JSON files.
-                Enable Graphiti for persistent cross-session memory with semantic search.
+                Enable Memory for persistent cross-session context with semantic search.
               </p>
             </div>
           )}
@@ -131,57 +552,19 @@ export function SecuritySettings({
 
               <Separator />
 
-              {/* LLM Provider Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">LLM Provider</Label>
-                <p className="text-xs text-muted-foreground">
-                  Provider for graph operations (extraction, search, reasoning)
-                </p>
-                <Select
-                  value={envConfig.graphitiProviderConfig?.llmProvider || 'openai'}
-                  onValueChange={(value) => {
-                    const currentConfig = envConfig.graphitiProviderConfig || {
-                      llmProvider: 'openai' as const,
-                      embeddingProvider: 'openai' as const
-                    };
-                    updateEnvConfig({
-                      graphitiProviderConfig: {
-                        ...currentConfig,
-                        llmProvider: value as 'openai' | 'anthropic' | 'azure_openai' | 'ollama' | 'google' | 'groq',
-                      }
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select LLM provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="openai">OpenAI (GPT-4o-mini)</SelectItem>
-                    <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
-                    <SelectItem value="google">Google AI (Gemini)</SelectItem>
-                    <SelectItem value="azure_openai">Azure OpenAI</SelectItem>
-                    <SelectItem value="ollama">Ollama (Local)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Embedding Provider Selection */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">Embedding Provider</Label>
                 <p className="text-xs text-muted-foreground">
-                  Provider for semantic search embeddings
+                  Provider for semantic search (optional - keyword search works without)
                 </p>
                 <Select
-                  value={envConfig.graphitiProviderConfig?.embeddingProvider || 'openai'}
-                  onValueChange={(value) => {
-                    const currentConfig = envConfig.graphitiProviderConfig || {
-                      llmProvider: 'openai' as const,
-                      embeddingProvider: 'openai' as const
-                    };
+                  value={embeddingProvider}
+                  onValueChange={(value: GraphitiEmbeddingProvider) => {
                     updateEnvConfig({
                       graphitiProviderConfig: {
-                        ...currentConfig,
-                        embeddingProvider: value as 'openai' | 'voyage' | 'azure_openai' | 'ollama' | 'google' | 'huggingface',
+                        ...envConfig.graphitiProviderConfig,
+                        embeddingProvider: value,
                       }
                     });
                   }}
@@ -190,60 +573,25 @@ export function SecuritySettings({
                     <SelectValue placeholder="Select embedding provider" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="ollama">Ollama (Local - Free)</SelectItem>
                     <SelectItem value="openai">OpenAI</SelectItem>
                     <SelectItem value="voyage">Voyage AI</SelectItem>
                     <SelectItem value="google">Google AI</SelectItem>
                     <SelectItem value="azure_openai">Azure OpenAI</SelectItem>
-                    <SelectItem value="ollama">Ollama (Local)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              {/* Provider-specific fields */}
+              {renderProviderFields()}
+
               <Separator />
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium text-foreground">
-                    OpenAI API Key {envConfig.openaiKeyIsGlobal ? '(Override)' : ''}
-                  </Label>
-                  {envConfig.openaiKeyIsGlobal && (
-                    <span className="flex items-center gap-1 text-xs text-info">
-                      <Globe className="h-3 w-3" />
-                      Using global key
-                    </span>
-                  )}
-                </div>
-                {envConfig.openaiKeyIsGlobal ? (
-                  <p className="text-xs text-muted-foreground">
-                    Using key from App Settings. Enter a project-specific key below to override.
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Required when using OpenAI as LLM or embedding provider
-                  </p>
-                )}
-                <div className="relative">
-                  <Input
-                    type={showOpenAIKey ? 'text' : 'password'}
-                    placeholder={envConfig.openaiKeyIsGlobal ? 'Enter to override global key...' : 'sk-xxxxxxxx'}
-                    value={envConfig.openaiKeyIsGlobal ? '' : (envConfig.openaiApiKey || '')}
-                    onChange={(e) => updateEnvConfig({ openaiApiKey: e.target.value || undefined })}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowOpenAIKey(!showOpenAIKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showOpenAIKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
+              {/* Database Settings */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">Database Name</Label>
                 <p className="text-xs text-muted-foreground">
-                  Stored in ~/.auto-claude/graphs/
+                  Stored in ~/.auto-claude/memories/
                 </p>
                 <Input
                   placeholder="auto_claude_memory"
@@ -255,10 +603,10 @@ export function SecuritySettings({
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-foreground">Database Path (Optional)</Label>
                 <p className="text-xs text-muted-foreground">
-                  Custom storage location. Default: ~/.auto-claude/graphs/
+                  Custom storage location. Default: ~/.auto-claude/memories/
                 </p>
                 <Input
-                  placeholder="~/.auto-claude/graphs"
+                  placeholder="~/.auto-claude/memories"
                   value={envConfig.graphitiDbPath || ''}
                   onChange={(e) => updateEnvConfig({ graphitiDbPath: e.target.value || undefined })}
                 />

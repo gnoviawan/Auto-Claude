@@ -175,65 +175,45 @@ export interface GraphitiConnectionTestResult {
   ready: boolean;
 }
 
-// Graphiti Provider Types (Memory System V2)
-// LLM Providers: OpenAI, Anthropic, Azure OpenAI, Ollama (local), Google, Groq
-export type GraphitiLLMProvider = 'openai' | 'anthropic' | 'azure_openai' | 'ollama' | 'google' | 'groq';
-// Embedding Providers: OpenAI, Voyage AI, Azure OpenAI, Ollama (local), Google, HuggingFace
-export type GraphitiEmbeddingProvider = 'openai' | 'voyage' | 'azure_openai' | 'ollama' | 'google' | 'huggingface';
+// Memory Provider Types
+// Embedding Providers: OpenAI, Voyage AI, Azure OpenAI, Ollama (local), Google
+// Note: LLM provider removed - Claude SDK handles RAG queries
+export type GraphitiEmbeddingProvider = 'openai' | 'voyage' | 'azure_openai' | 'ollama' | 'google';
 
-// Legacy type alias for backward compatibility
+// Legacy type aliases for backward compatibility
+export type GraphitiLLMProvider = 'openai' | 'anthropic' | 'azure_openai' | 'ollama' | 'google' | 'groq';
 export type GraphitiProviderType = GraphitiLLMProvider;
 
 export interface GraphitiProviderConfig {
-  // LLM Provider
-  llmProvider: GraphitiLLMProvider;
-  llmModel?: string;  // Model name, uses provider default if not specified
-
-  // Embedding Provider
+  // Embedding Provider (LLM provider removed - Claude SDK handles RAG)
   embeddingProvider: GraphitiEmbeddingProvider;
   embeddingModel?: string;  // Embedding model, uses provider default if not specified
 
-  // OpenAI settings
+  // OpenAI Embeddings
   openaiApiKey?: string;
-  openaiModel?: string;
   openaiEmbeddingModel?: string;
 
-  // Anthropic settings (LLM only - needs separate embedder)
-  anthropicApiKey?: string;
-  anthropicModel?: string;
-
-  // Azure OpenAI settings
+  // Azure OpenAI Embeddings
   azureOpenaiApiKey?: string;
   azureOpenaiBaseUrl?: string;
-  azureOpenaiLlmDeployment?: string;
   azureOpenaiEmbeddingDeployment?: string;
 
-  // Voyage AI settings (embeddings only - commonly used with Anthropic)
+  // Voyage AI Embeddings
   voyageApiKey?: string;
   voyageEmbeddingModel?: string;
 
-  // Google AI settings (LLM and embeddings)
+  // Google AI Embeddings
   googleApiKey?: string;
-  googleLlmModel?: string;
   googleEmbeddingModel?: string;
 
-  // Ollama settings (local LLM, no API key required)
+  // Ollama Embeddings (local, no API key required)
   ollamaBaseUrl?: string;  // Default: http://localhost:11434
-  ollamaLlmModel?: string;
   ollamaEmbeddingModel?: string;
   ollamaEmbeddingDim?: number;
 
-  // Groq settings
-  groqApiKey?: string;
-  groqModel?: string;
-
-  // HuggingFace settings (embeddings only)
-  huggingfaceApiKey?: string;
-  huggingfaceEmbeddingModel?: string;
-
   // LadybugDB settings (embedded database - no Docker required)
   database?: string;  // Database name (default: auto_claude_memory)
-  dbPath?: string;    // Database storage path (default: ~/.auto-claude/graphs)
+  dbPath?: string;    // Database storage path (default: ~/.auto-claude/memories)
 }
 
 export interface GraphitiProviderInfo {

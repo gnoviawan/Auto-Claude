@@ -549,6 +549,11 @@ export interface ElectronAPI {
     }>;
     count: number;
   }>>;
+  pullOllamaModel: (modelName: string, baseUrl?: string) => Promise<IPCResult<{
+    model: string;
+    status: 'completed' | 'failed';
+    output: string[];
+  }>>;
 }
 
 declare global {

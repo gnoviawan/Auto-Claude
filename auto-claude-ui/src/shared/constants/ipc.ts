@@ -207,10 +207,12 @@ export const IPC_CHANNELS = {
   GRAPHITI_VALIDATE_LLM: 'graphiti:validateLlm',
   GRAPHITI_TEST_CONNECTION: 'graphiti:testConnection',
 
-  // Ollama model detection
+  // Ollama model detection and management
   OLLAMA_CHECK_STATUS: 'ollama:checkStatus',
   OLLAMA_LIST_MODELS: 'ollama:listModels',
   OLLAMA_LIST_EMBEDDING_MODELS: 'ollama:listEmbeddingModels',
+  OLLAMA_PULL_MODEL: 'ollama:pullModel',
+  OLLAMA_PULL_PROGRESS: 'ollama:pullProgress',
 
   // Auto Claude source updates
   AUTOBUILD_SOURCE_CHECK: 'autobuild:source:check',

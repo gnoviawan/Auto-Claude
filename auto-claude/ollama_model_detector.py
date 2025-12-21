@@ -27,6 +27,11 @@ DEFAULT_OLLAMA_URL = "http://localhost:11434"
 # This list helps identify embedding models from the model name
 KNOWN_EMBEDDING_MODELS = {
     "nomic-embed-text": {"dim": 768, "description": "Nomic AI text embeddings"},
+    "embeddinggemma": {"dim": 768, "description": "Google EmbeddingGemma (lightweight)"},
+    "qwen3-embedding": {"dim": 1024, "description": "Qwen3 Embedding (0.6B)"},
+    "qwen3-embedding:0.6b": {"dim": 1024, "description": "Qwen3 Embedding 0.6B"},
+    "qwen3-embedding:4b": {"dim": 2560, "description": "Qwen3 Embedding 4B"},
+    "qwen3-embedding:8b": {"dim": 4096, "description": "Qwen3 Embedding 8B"},
     "bge-base-en": {"dim": 768, "description": "BAAI General Embedding - Base"},
     "bge-large-en": {"dim": 1024, "description": "BAAI General Embedding - Large"},
     "bge-small-en": {"dim": 384, "description": "BAAI General Embedding - Small"},
@@ -40,6 +45,34 @@ KNOWN_EMBEDDING_MODELS = {
     "e5-large": {"dim": 1024, "description": "E5 Large embeddings"},
     "paraphrase-multilingual": {"dim": 768, "description": "Multilingual paraphrase model"},
 }
+
+# Recommended embedding models for download (shown in UI)
+RECOMMENDED_EMBEDDING_MODELS = [
+    {
+        "name": "embeddinggemma",
+        "description": "Google's lightweight embedding model (768 dim)",
+        "size_estimate": "621 MB",
+        "dim": 768,
+    },
+    {
+        "name": "qwen3-embedding:0.6b",
+        "description": "Qwen3 small embedding model (1024 dim)",
+        "size_estimate": "494 MB",
+        "dim": 1024,
+    },
+    {
+        "name": "nomic-embed-text",
+        "description": "Popular general-purpose embeddings (768 dim)",
+        "size_estimate": "274 MB",
+        "dim": 768,
+    },
+    {
+        "name": "mxbai-embed-large",
+        "description": "MixedBread AI large embeddings (1024 dim)",
+        "size_estimate": "670 MB",
+        "dim": 1024,
+    },
+]
 
 # Patterns that indicate an embedding model
 EMBEDDING_PATTERNS = [
@@ -241,6 +274,84 @@ def cmd_list_embedding_models(args) -> None:
     })
 
 
+def cmd_get_recommended_models(args) -> None:
+    """Get recommended embedding models with install status."""
+    base_url = args.base_url or DEFAULT_OLLAMA_URL
+
+    # Get currently installed models
+    result = fetch_ollama_api(base_url, "api/tags")
+    installed_names = set()
+    if result:
+        for model in result.get("models", []):
+            name = model.get("name", "")
+            # Normalize name (remove :latest suffix for comparison)
+            base_name = name.split(":")[0] if ":" in name else name
+            installed_names.add(name)
+            installed_names.add(base_name)
+
+    # Build recommended list with install status
+    recommended = []
+    for model in RECOMMENDED_EMBEDDING_MODELS:
+        name = model["name"]
+        base_name = name.split(":")[0] if ":" in name else name
+        is_installed = name in installed_names or base_name in installed_names
+
+        recommended.append({
+            **model,
+            "installed": is_installed,
+        })
+
+    output_json(True, data={
+        "recommended": recommended,
+        "count": len(recommended),
+        "url": base_url,
+    })
+
+
+def cmd_pull_model(args) -> None:
+    """Pull (download) an Ollama model."""
+    import subprocess
+
+    model_name = args.model
+    if not model_name:
+        output_error("Model name is required")
+        return
+
+    try:
+        # Run ollama pull command
+        process = subprocess.Popen(
+            ["ollama", "pull", model_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        output_lines = []
+        for line in iter(process.stdout.readline, ''):
+            line = line.strip()
+            if line:
+                output_lines.append(line)
+                # Print progress to stderr for streaming
+                print(line, file=sys.stderr, flush=True)
+
+        process.wait()
+
+        if process.returncode == 0:
+            output_json(True, data={
+                "model": model_name,
+                "status": "completed",
+                "output": output_lines,
+            })
+        else:
+            output_json(False, error=f"Failed to pull model: {' '.join(output_lines[-3:])}")
+
+    except FileNotFoundError:
+        output_error("Ollama CLI not found. Please install Ollama first.")
+    except Exception as e:
+        output_error(f"Failed to pull model: {str(e)}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Detect and list Ollama models for auto-claude-ui"
@@ -271,6 +382,20 @@ def main():
         help=f"Ollama server URL (default: {DEFAULT_OLLAMA_URL})"
     )
 
+    # get-recommended-models command
+    recommend_parser = subparsers.add_parser(
+        "get-recommended-models",
+        help="Get recommended embedding models with install status"
+    )
+    recommend_parser.add_argument(
+        "--base-url",
+        help=f"Ollama server URL (default: {DEFAULT_OLLAMA_URL})"
+    )
+
+    # pull-model command
+    pull_parser = subparsers.add_parser("pull-model", help="Pull (download) an Ollama model")
+    pull_parser.add_argument("model", help="Model name to pull (e.g., embeddinggemma)")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -282,6 +407,8 @@ def main():
         "check-status": cmd_check_status,
         "list-models": cmd_list_models,
         "list-embedding-models": cmd_list_embedding_models,
+        "get-recommended-models": cmd_get_recommended_models,
+        "pull-model": cmd_pull_model,
     }
 
     handler = commands.get(args.command)

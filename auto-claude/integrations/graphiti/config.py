@@ -19,7 +19,7 @@ Environment Variables:
 
     # Database
     GRAPHITI_DATABASE: Graph database name (default: auto_claude_memory)
-    GRAPHITI_DB_PATH: Database storage path (default: ~/.auto-claude/graphs)
+    GRAPHITI_DB_PATH: Database storage path (default: ~/.auto-claude/memories)
 
     # OpenAI
     OPENAI_API_KEY: Required for OpenAI provider
@@ -65,7 +65,7 @@ from typing import Optional
 
 # Default configuration values
 DEFAULT_DATABASE = "auto_claude_memory"
-DEFAULT_DB_PATH = "~/.auto-claude/graphs"
+DEFAULT_DB_PATH = "~/.auto-claude/memories"
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 
 # Graphiti state marker file (stores connection info and status)
@@ -239,39 +239,21 @@ class GraphitiConfig:
 
         Returns True if:
         - GRAPHITI_ENABLED is true
-        - LLM provider is configured correctly
-        - Embedder provider is configured correctly
+        - Embedder provider is configured (optional - keyword search works without)
+
+        Note: LLM provider is no longer required - Claude Agent SDK handles RAG queries.
         """
         if not self.enabled:
             return False
 
-        # Validate LLM provider
-        if not self._validate_llm_provider():
-            return False
-
-        # Validate embedder provider
-        if not self._validate_embedder_provider():
-            return False
-
+        # Embedder validation is optional - memory works with keyword search fallback
+        # Return True if enabled, embedder config is a bonus for semantic search
         return True
 
     def _validate_llm_provider(self) -> bool:
-        """Validate LLM provider configuration."""
-        if self.llm_provider == "openai":
-            return bool(self.openai_api_key)
-        elif self.llm_provider == "anthropic":
-            return bool(self.anthropic_api_key)
-        elif self.llm_provider == "azure_openai":
-            return bool(
-                self.azure_openai_api_key
-                and self.azure_openai_base_url
-                and self.azure_openai_llm_deployment
-            )
-        elif self.llm_provider == "ollama":
-            return bool(self.ollama_llm_model)
-        elif self.llm_provider == "google":
-            return bool(self.google_api_key)
-        return False
+        """Validate LLM provider configuration (deprecated - Claude SDK handles RAG)."""
+        # LLM provider is no longer required - Claude Agent SDK handles graph operations
+        return True
 
     def _validate_embedder_provider(self) -> bool:
         """Validate embedder provider configuration."""
@@ -300,34 +282,10 @@ class GraphitiConfig:
             errors.append("GRAPHITI_ENABLED must be set to true")
             return errors
 
-        # LLM provider validation
-        if self.llm_provider == "openai":
-            if not self.openai_api_key:
-                errors.append("OpenAI LLM provider requires OPENAI_API_KEY")
-        elif self.llm_provider == "anthropic":
-            if not self.anthropic_api_key:
-                errors.append("Anthropic LLM provider requires ANTHROPIC_API_KEY")
-        elif self.llm_provider == "azure_openai":
-            if not self.azure_openai_api_key:
-                errors.append("Azure OpenAI LLM provider requires AZURE_OPENAI_API_KEY")
-            if not self.azure_openai_base_url:
-                errors.append(
-                    "Azure OpenAI LLM provider requires AZURE_OPENAI_BASE_URL"
-                )
-            if not self.azure_openai_llm_deployment:
-                errors.append(
-                    "Azure OpenAI LLM provider requires AZURE_OPENAI_LLM_DEPLOYMENT"
-                )
-        elif self.llm_provider == "ollama":
-            if not self.ollama_llm_model:
-                errors.append("Ollama LLM provider requires OLLAMA_LLM_MODEL")
-        elif self.llm_provider == "google":
-            if not self.google_api_key:
-                errors.append("Google LLM provider requires GOOGLE_API_KEY")
-        else:
-            errors.append(f"Unknown LLM provider: {self.llm_provider}")
+        # Note: LLM provider validation removed - Claude Agent SDK handles RAG queries
+        # Memory works with keyword search even without embedder, so embedder errors are warnings
 
-        # Embedder provider validation
+        # Embedder provider validation (optional - keyword search works without)
         if self.embedder_provider == "openai":
             if not self.openai_api_key:
                 errors.append("OpenAI embedder provider requires OPENAI_API_KEY")

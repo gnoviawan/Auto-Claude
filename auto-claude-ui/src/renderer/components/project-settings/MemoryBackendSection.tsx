@@ -96,13 +96,13 @@ export function MemoryBackendSection({
         ? 'bg-success/10 text-success'
         : 'bg-muted text-muted-foreground'
     }`}>
-      {envConfig.graphitiEnabled ? 'Graphiti' : 'File-based'}
+      {envConfig.graphitiEnabled ? 'Enabled' : 'Disabled'}
     </span>
   );
 
   return (
     <CollapsibleSection
-      title="Memory Backend"
+      title="Memory"
       icon={<Database className="h-4 w-4" />}
       isExpanded={isExpanded}
       onToggle={onToggle}
@@ -110,9 +110,9 @@ export function MemoryBackendSection({
     >
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label className="font-normal text-foreground">Use Graphiti (Recommended)</Label>
+          <Label className="font-normal text-foreground">Enable Memory</Label>
           <p className="text-xs text-muted-foreground">
-            Persistent cross-session memory using LadybugDB (embedded graph database)
+            Persistent cross-session memory using embedded graph database
           </p>
         </div>
         <Switch
@@ -129,7 +129,7 @@ export function MemoryBackendSection({
         <div className="rounded-lg border border-border bg-muted/30 p-3">
           <p className="text-xs text-muted-foreground">
             Using file-based memory. Session insights are stored locally in JSON files.
-            Enable Graphiti for persistent cross-session memory with semantic search.
+            Enable Memory for persistent cross-session context with semantic search.
           </p>
         </div>
       )}
@@ -174,48 +174,18 @@ export function MemoryBackendSection({
 
           <Separator />
 
-          {/* LLM Provider Selection - V2 Multi-provider support */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">LLM Provider</Label>
-            <p className="text-xs text-muted-foreground">
-              Provider for graph operations (extraction, search, reasoning)
-            </p>
-            <Select
-              value={envConfig.graphitiProviderConfig?.llmProvider || 'openai'}
-              onValueChange={(value) => onUpdateConfig({
-                graphitiProviderConfig: {
-                  ...envConfig.graphitiProviderConfig,
-                  llmProvider: value as 'openai' | 'anthropic' | 'azure_openai' | 'ollama' | 'google' | 'groq',
-                  embeddingProvider: envConfig.graphitiProviderConfig?.embeddingProvider || 'openai',
-                }
-              })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select LLM provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI (GPT-4o-mini)</SelectItem>
-                <SelectItem value="anthropic">Anthropic (Claude)</SelectItem>
-                <SelectItem value="google">Google AI (Gemini)</SelectItem>
-                <SelectItem value="azure_openai">Azure OpenAI</SelectItem>
-                <SelectItem value="ollama">Ollama (Local)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Embedding Provider Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">Embedding Provider</Label>
             <p className="text-xs text-muted-foreground">
-              Provider for semantic search embeddings
+              Provider for semantic search (optional - keyword search works without)
             </p>
             <Select
               value={embeddingProvider}
               onValueChange={(value) => onUpdateConfig({
                 graphitiProviderConfig: {
                   ...envConfig.graphitiProviderConfig,
-                  llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
-                  embeddingProvider: value as 'openai' | 'voyage' | 'azure_openai' | 'ollama' | 'google' | 'huggingface',
+                  embeddingProvider: value as 'openai' | 'voyage' | 'azure_openai' | 'ollama' | 'google',
                 }
               })}
             >
@@ -223,11 +193,11 @@ export function MemoryBackendSection({
                 <SelectValue placeholder="Select embedding provider" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="ollama">Ollama (Local - Free)</SelectItem>
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="voyage">Voyage AI</SelectItem>
                 <SelectItem value="google">Google AI</SelectItem>
                 <SelectItem value="azure_openai">Azure OpenAI</SelectItem>
-                <SelectItem value="ollama">Ollama (Local)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -236,7 +206,7 @@ export function MemoryBackendSection({
 
           {/* Provider-specific credential fields */}
           {/* OpenAI */}
-          {(embeddingProvider === 'openai' || envConfig.graphitiProviderConfig?.llmProvider === 'openai') && (
+          {embeddingProvider === 'openai' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium text-foreground">
@@ -255,7 +225,7 @@ export function MemoryBackendSection({
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Required for OpenAI LLM/embedding provider
+                  Required for OpenAI embeddings
                 </p>
               )}
               <PasswordInput
@@ -271,14 +241,13 @@ export function MemoryBackendSection({
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">Voyage AI API Key</Label>
               <p className="text-xs text-muted-foreground">
-                Required for Voyage AI embeddings (commonly used with Anthropic)
+                Required for Voyage AI embeddings
               </p>
               <PasswordInput
                 value={envConfig.graphitiProviderConfig?.voyageApiKey || ''}
                 onChange={(value) => onUpdateConfig({
                   graphitiProviderConfig: {
                     ...envConfig.graphitiProviderConfig,
-                    llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                     embeddingProvider: 'voyage',
                     voyageApiKey: value || undefined,
                   }
@@ -293,7 +262,6 @@ export function MemoryBackendSection({
                   onChange={(e) => onUpdateConfig({
                     graphitiProviderConfig: {
                       ...envConfig.graphitiProviderConfig,
-                      llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                       embeddingProvider: 'voyage',
                       voyageEmbeddingModel: e.target.value || undefined,
                     }
@@ -304,19 +272,18 @@ export function MemoryBackendSection({
           )}
 
           {/* Google AI */}
-          {(embeddingProvider === 'google' || envConfig.graphitiProviderConfig?.llmProvider === 'google') && (
+          {embeddingProvider === 'google' && (
             <div className="space-y-2">
               <Label className="text-sm font-medium text-foreground">Google AI API Key</Label>
               <p className="text-xs text-muted-foreground">
-                Required for Google AI (Gemini) LLM/embeddings
+                Required for Google AI embeddings
               </p>
               <PasswordInput
                 value={envConfig.graphitiProviderConfig?.googleApiKey || ''}
                 onChange={(value) => onUpdateConfig({
                   graphitiProviderConfig: {
                     ...envConfig.graphitiProviderConfig,
-                    llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
-                    embeddingProvider: envConfig.graphitiProviderConfig?.embeddingProvider || 'openai',
+                    embeddingProvider: 'google',
                     googleApiKey: value || undefined,
                   }
                 })}
@@ -326,7 +293,7 @@ export function MemoryBackendSection({
           )}
 
           {/* Azure OpenAI */}
-          {(embeddingProvider === 'azure_openai' || envConfig.graphitiProviderConfig?.llmProvider === 'azure_openai') && (
+          {embeddingProvider === 'azure_openai' && (
             <div className="space-y-3">
               <Label className="text-sm font-medium text-foreground">Azure OpenAI Configuration</Label>
               <div className="space-y-2">
@@ -336,8 +303,7 @@ export function MemoryBackendSection({
                   onChange={(value) => onUpdateConfig({
                     graphitiProviderConfig: {
                       ...envConfig.graphitiProviderConfig,
-                      llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
-                      embeddingProvider: envConfig.graphitiProviderConfig?.embeddingProvider || 'openai',
+                      embeddingProvider: 'azure_openai',
                       azureOpenaiApiKey: value || undefined,
                     }
                   })}
@@ -352,30 +318,26 @@ export function MemoryBackendSection({
                   onChange={(e) => onUpdateConfig({
                     graphitiProviderConfig: {
                       ...envConfig.graphitiProviderConfig,
-                      llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
-                      embeddingProvider: envConfig.graphitiProviderConfig?.embeddingProvider || 'openai',
+                      embeddingProvider: 'azure_openai',
                       azureOpenaiBaseUrl: e.target.value || undefined,
                     }
                   })}
                 />
               </div>
-              {embeddingProvider === 'azure_openai' && (
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Embedding Deployment Name</Label>
-                  <Input
-                    placeholder="text-embedding-ada-002"
-                    value={envConfig.graphitiProviderConfig?.azureOpenaiEmbeddingDeployment || ''}
-                    onChange={(e) => onUpdateConfig({
-                      graphitiProviderConfig: {
-                        ...envConfig.graphitiProviderConfig,
-                        llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
-                        embeddingProvider: 'azure_openai',
-                        azureOpenaiEmbeddingDeployment: e.target.value || undefined,
-                      }
-                    })}
-                  />
-                </div>
-              )}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Embedding Deployment Name</Label>
+                <Input
+                  placeholder="text-embedding-ada-002"
+                  value={envConfig.graphitiProviderConfig?.azureOpenaiEmbeddingDeployment || ''}
+                  onChange={(e) => onUpdateConfig({
+                    graphitiProviderConfig: {
+                      ...envConfig.graphitiProviderConfig,
+                      embeddingProvider: 'azure_openai',
+                      azureOpenaiEmbeddingDeployment: e.target.value || undefined,
+                    }
+                  })}
+                />
+              </div>
             </div>
           )}
 
@@ -423,7 +385,6 @@ export function MemoryBackendSection({
                   onChange={(e) => onUpdateConfig({
                     graphitiProviderConfig: {
                       ...envConfig.graphitiProviderConfig,
-                      llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                       embeddingProvider: 'ollama',
                       ollamaBaseUrl: e.target.value || undefined,
                     }
@@ -447,7 +408,6 @@ export function MemoryBackendSection({
                       onUpdateConfig({
                         graphitiProviderConfig: {
                           ...envConfig.graphitiProviderConfig,
-                          llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                           embeddingProvider: 'ollama',
                           ollamaEmbeddingModel: value,
                           ollamaEmbeddingDim: model?.embedding_dim || undefined,
@@ -480,7 +440,6 @@ export function MemoryBackendSection({
                     onChange={(e) => onUpdateConfig({
                       graphitiProviderConfig: {
                         ...envConfig.graphitiProviderConfig,
-                        llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                         embeddingProvider: 'ollama',
                         ollamaEmbeddingModel: e.target.value || undefined,
                       }
@@ -501,7 +460,6 @@ export function MemoryBackendSection({
                   onChange={(e) => onUpdateConfig({
                     graphitiProviderConfig: {
                       ...envConfig.graphitiProviderConfig,
-                      llmProvider: envConfig.graphitiProviderConfig?.llmProvider || 'openai',
                       embeddingProvider: 'ollama',
                       ollamaEmbeddingDim: parseInt(e.target.value) || undefined,
                     }
@@ -520,7 +478,7 @@ export function MemoryBackendSection({
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">Database Name</Label>
             <p className="text-xs text-muted-foreground">
-              Name for the graph database (stored in ~/.auto-claude/graphs/)
+              Name for the memory database (stored in ~/.auto-claude/memories/)
             </p>
             <Input
               placeholder="auto_claude_memory"
@@ -532,10 +490,10 @@ export function MemoryBackendSection({
           <div className="space-y-2">
             <Label className="text-sm font-medium text-foreground">Database Path (Optional)</Label>
             <p className="text-xs text-muted-foreground">
-              Custom storage location. Default: ~/.auto-claude/graphs/
+              Custom storage location. Default: ~/.auto-claude/memories/
             </p>
             <Input
-              placeholder="~/.auto-claude/graphs"
+              placeholder="~/.auto-claude/memories"
               value={envConfig.graphitiDbPath || ''}
               onChange={(e) => onUpdateConfig({ graphitiDbPath: e.target.value || undefined })}
             />

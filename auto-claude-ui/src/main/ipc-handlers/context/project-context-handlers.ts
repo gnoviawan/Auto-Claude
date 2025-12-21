@@ -13,9 +13,9 @@ import type {
 import { projectStore } from '../../project-store';
 import { getMemoryService, isKuzuAvailable } from '../../memory-service';
 import {
-  getAutoBuildSourcePath,
   getGraphitiDatabaseDetails
 } from './utils';
+import { getEffectiveSourcePath } from '../../updater/path-resolver';
 import {
   loadGraphitiStateFromSpecs,
   buildMemoryStatus
@@ -145,7 +145,7 @@ export function registerProjectContextHandlers(
 
       try {
         // Run the analyzer script to regenerate project_index.json
-        const autoBuildSource = getAutoBuildSourcePath();
+        const autoBuildSource = getEffectiveSourcePath();
 
         if (!autoBuildSource) {
           return {

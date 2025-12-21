@@ -174,13 +174,13 @@ export function SectionRouter({
     case 'memory':
       return (
         <SettingsSection
-          title="Memory Backend"
-          description="Configure how agents store and retrieve memory"
+          title="Memory"
+          description="Configure persistent cross-session memory for agents"
         >
           <InitializationGuard
             initialized={!!project.autoBuildPath}
-            title="Memory Backend"
-            description="Configure agent memory storage"
+            title="Memory"
+            description="Configure persistent memory"
           >
             <SecuritySettings
               envConfig={envConfig}

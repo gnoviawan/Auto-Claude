@@ -99,6 +99,11 @@ export interface ProjectAPI {
     }>;
     count: number;
   }>>;
+  pullOllamaModel: (modelName: string, baseUrl?: string) => Promise<IPCResult<{
+    model: string;
+    status: 'completed' | 'failed';
+    output: string[];
+  }>>;
 }
 
 export const createProjectAPI = (): ProjectAPI => ({
@@ -216,5 +221,8 @@ export const createProjectAPI = (): ProjectAPI => ({
     ipcRenderer.invoke(IPC_CHANNELS.OLLAMA_LIST_MODELS, baseUrl),
 
   listOllamaEmbeddingModels: (baseUrl?: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.OLLAMA_LIST_EMBEDDING_MODELS, baseUrl)
+    ipcRenderer.invoke(IPC_CHANNELS.OLLAMA_LIST_EMBEDDING_MODELS, baseUrl),
+
+  pullOllamaModel: (modelName: string, baseUrl?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.OLLAMA_PULL_MODEL, modelName, baseUrl)
 });
