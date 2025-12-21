@@ -197,7 +197,7 @@ jobs:
           cat checksums.sha256
 
       - name: Dry run summary
-        if: ${{ inputs.dry_run == true }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true }}
         run: |
           echo "## Dry Run Complete" >> $GITHUB_STEP_SUMMARY
           echo "Build artifacts created successfully:" >> $GITHUB_STEP_SUMMARY
@@ -210,7 +210,7 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Generate changelog
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != true) }}
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v4
         with:
@@ -219,7 +219,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.dry_run != true) }}
         uses: softprops/action-gh-release@v2
         with:
           body: ${{ steps.changelog.outputs.changelog }}
