@@ -38,27 +38,37 @@ afterEach(() => {
 });
 
 // Mock window.electronAPI for renderer tests
-if (typeof window !== 'undefined') {
-  (window as unknown as { electronAPI: unknown }).electronAPI = {
-    addProject: vi.fn(),
-    removeProject: vi.fn(),
-    getProjects: vi.fn(),
-    updateProjectSettings: vi.fn(),
-    getTasks: vi.fn(),
-    createTask: vi.fn(),
-    startTask: vi.fn(),
-    stopTask: vi.fn(),
-    submitReview: vi.fn(),
-    onTaskProgress: vi.fn(() => vi.fn()),
-    onTaskError: vi.fn(() => vi.fn()),
-    onTaskLog: vi.fn(() => vi.fn()),
-    onTaskStatusChange: vi.fn(() => vi.fn()),
-    getSettings: vi.fn(),
-    saveSettings: vi.fn(),
-    selectDirectory: vi.fn(),
-    getAppVersion: vi.fn()
-  };
+// Define window object for Node environment (used by jsdom in tests)
+if (typeof window === 'undefined') {
+  (globalThis as unknown as { window: unknown }).window = {};
 }
+
+(window as unknown as { electronAPI: unknown }).electronAPI = {
+  addProject: vi.fn(),
+  removeProject: vi.fn(),
+  getProjects: vi.fn(),
+  updateProjectSettings: vi.fn(),
+  getTasks: vi.fn(),
+  createTask: vi.fn(),
+  startTask: vi.fn(),
+  stopTask: vi.fn(),
+  submitReview: vi.fn(),
+  onTaskProgress: vi.fn(() => vi.fn()),
+  onTaskError: vi.fn(() => vi.fn()),
+  onTaskLog: vi.fn(() => vi.fn()),
+  onTaskStatusChange: vi.fn(() => vi.fn()),
+  getSettings: vi.fn(),
+  saveSettings: vi.fn(),
+  selectDirectory: vi.fn(),
+  getAppVersion: vi.fn(),
+  // Profile-related API methods
+  getAPIProfiles: vi.fn(),
+  saveAPIProfile: vi.fn(),
+  updateAPIProfile: vi.fn(),
+  deleteAPIProfile: vi.fn(),
+  setActiveAPIProfile: vi.fn(),
+  testAPIConnection: vi.fn()
+};
 
 // Suppress console errors in tests unless explicitly testing error scenarios
 const originalConsoleError = console.error;
