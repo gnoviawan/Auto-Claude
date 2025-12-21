@@ -39,7 +39,7 @@ import { ProactiveSwapListener } from './components/ProactiveSwapListener';
 import { GitHubSetupModal } from './components/GitHubSetupModal';
 import { useProjectStore, loadProjects, addProject, initializeProject } from './stores/project-store';
 import { useTaskStore, loadTasks } from './stores/task-store';
-import { useSettingsStore, loadSettings } from './stores/settings-store';
+import { useSettingsStore, loadSettings, loadProfiles } from './stores/settings-store';
 import { useTerminalStore, restoreTerminalSessions } from './stores/terminal-store';
 import { useIpcListeners } from './hooks/useIpc';
 import { COLOR_THEMES } from '../shared/constants';
@@ -84,6 +84,7 @@ export function App() {
   useEffect(() => {
     loadProjects();
     loadSettings();
+    loadProfiles();
   }, []);
 
   // Track if settings have been loaded at least once
