@@ -5,6 +5,7 @@
 
 export { OnboardingWizard } from './OnboardingWizard';
 export { WelcomeStep } from './WelcomeStep';
+export { AuthChoiceStep } from './AuthChoiceStep';
 export { OAuthStep } from './OAuthStep';
 export { GraphitiStep } from './GraphitiStep';
 export { FirstSpecStep } from './FirstSpecStep';

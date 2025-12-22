@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { WizardProgress, WizardStep } from './WizardProgress';
 import { WelcomeStep } from './WelcomeStep';
+import { AuthChoiceStep } from './AuthChoiceStep';
 import { OAuthStep } from './OAuthStep';
 import { GraphitiStep } from './GraphitiStep';
 import { CompletionStep } from './CompletionStep';
@@ -24,12 +25,13 @@ interface OnboardingWizardProps {
 }
 
 // Wizard step identifiers
-type WizardStepId = 'welcome' | 'oauth' | 'graphiti' | 'completion';
+type WizardStepId = 'welcome' | 'auth-choice' | 'oauth' | 'graphiti' | 'completion';
 
 // Step configuration
 const WIZARD_STEPS: { id: WizardStepId; label: string }[] = [
   { id: 'welcome', label: 'Welcome' },
-  { id: 'oauth', label: 'Auth' },
+  { id: 'auth-choice', label: 'Auth Method' },
+  { id: 'oauth', label: 'OAuth' },
   { id: 'graphiti', label: 'Memory' },
   { id: 'completion', label: 'Done' }
 ];
@@ -54,6 +56,8 @@ export function OnboardingWizard({
   const { updateSettings } = useSettingsStore();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStepId>>(new Set());
+  // Track if oauth step was bypassed (API key path chosen)
+  const [oauthBypassed, setOauthBypassed] = useState(false);
 
   // Get current step ID
   const currentStepId = WIZARD_STEPS[currentStepIndex].id;
@@ -70,21 +74,46 @@ export function OnboardingWizard({
     // Mark current step as completed
     setCompletedSteps(prev => new Set(prev).add(currentStepId));
 
+    // If leaving auth-choice, reset oauth bypassed flag
+    if (currentStepId === 'auth-choice') {
+      setOauthBypassed(false);
+    }
+
     if (currentStepIndex < WIZARD_STEPS.length - 1) {
       setCurrentStepIndex(prev => prev + 1);
     }
   }, [currentStepIndex, currentStepId]);
 
   const goToPreviousStep = useCallback(() => {
+    // If going back from graphiti and oauth was bypassed, go back to auth-choice (skip oauth)
+    if (currentStepId === 'graphiti' && oauthBypassed) {
+      // Find index of auth-choice step
+      const authChoiceIndex = WIZARD_STEPS.findIndex(step => step.id === 'auth-choice');
+      setCurrentStepIndex(authChoiceIndex);
+      setOauthBypassed(false);
+      return;
+    }
+
     if (currentStepIndex > 0) {
       setCurrentStepIndex(prev => prev - 1);
     }
-  }, [currentStepIndex]);
+  }, [currentStepIndex, currentStepId, oauthBypassed]);
+
+  // Handler for when API key path is chosen - skips oauth step
+  const handleSkipToGraphiti = useCallback(() => {
+    setOauthBypassed(true);
+    setCompletedSteps(prev => new Set(prev).add('auth-choice'));
+
+    // Find index of graphiti step
+    const graphitiIndex = WIZARD_STEPS.findIndex(step => step.id === 'graphiti');
+    setCurrentStepIndex(graphitiIndex);
+  }, []);
 
   // Reset wizard state (for re-running) - defined before skipWizard/finishWizard that use it
   const resetWizard = useCallback(() => {
     setCurrentStepIndex(0);
     setCompletedSteps(new Set());
+    setOauthBypassed(false);
   }, []);
 
   const skipWizard = useCallback(async () => {
@@ -143,6 +172,15 @@ export function OnboardingWizard({
           <WelcomeStep
             onGetStarted={goToNextStep}
             onSkip={skipWizard}
+          />
+        );
+      case 'auth-choice':
+        return (
+          <AuthChoiceStep
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+            onSkip={skipWizard}
+            onAPIKeyPathComplete={handleSkipToGraphiti}
           />
         );
       case 'oauth':
