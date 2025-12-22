@@ -283,7 +283,7 @@ export function ProfileEditDialog({ open, onOpenChange, onSaved, profile }: Prof
         <DialogHeader>
           <DialogTitle>{isEditMode ? 'Edit Profile' : 'Add API Profile'}</DialogTitle>
           <DialogDescription>
-            Configure a custom Anthropic-compatible API endpoint for your builds.
+            Configure an Anthropic-compatible API endpoint (e.g., Anthropic, MiniMax, z.ai, or other compatible providers).
           </DialogDescription>
         </DialogHeader>
 
@@ -310,14 +310,14 @@ export function ProfileEditDialog({ open, onOpenChange, onSaved, profile }: Prof
             </Label>
             <Input
               id="profile-url"
-              placeholder="https://api.anthropic.com"
+              placeholder="https://api.example.com"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               className={urlError ? 'border-destructive' : ''}
             />
             {urlError && <p className="text-sm text-destructive">{urlError}</p>}
             <p className="text-xs text-muted-foreground">
-              Example: https://api.anthropic.com or http://localhost:8080
+              Enter the base URL of your Anthropic-compatible API provider
             </p>
           </div>
 
@@ -350,7 +350,7 @@ export function ProfileEditDialog({ open, onOpenChange, onSaved, profile }: Prof
                 <Input
                   id="profile-key"
                   type="password"
-                  placeholder="sk-ant-..."
+                  placeholder="Enter API key or JWT token"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   className={keyError ? 'border-destructive' : ''}
