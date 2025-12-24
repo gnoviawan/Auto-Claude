@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 # Check for Claude SDK availability
 try:
     from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
+    from phase_config import resolve_model_id
+
+    SDK_AVAILABLE = True
 
     SDK_AVAILABLE = True
 except ImportError:
