@@ -15,6 +15,7 @@ import { pythonEnvManager, getConfiguredPythonPath } from '../python-env-manager
 import { buildMemoryEnvVars } from '../memory-env-builder';
 import { readSettingsFile } from '../settings-utils';
 import type { AppSettings } from '../../shared/types/settings';
+import { getOAuthModeClearVars } from './env-utils';
 
 /**
  * Process spawning and lifecycle management
@@ -356,7 +357,16 @@ export class AgentProcessManager {
     const pythonEnv = pythonEnvManager.getPythonEnv();
 
     // Get active API profile environment variables
-    const apiProfileEnv = await getAPIProfileEnv();
+    let apiProfileEnv: Record<string, string> = {};
+    try {
+      apiProfileEnv = await getAPIProfileEnv();
+    } catch (error) {
+      console.error('[Agent Process] Failed to get API profile env:', error);
+      // Continue with empty profile env (falls back to OAuth mode)
+    }
+
+    // Get OAuth mode clear vars (to clear stale ANTHROPIC_* vars when using OAuth)
+    const oauthModeClearVars = getOAuthModeClearVars();
 
     // Parse Python command to handle space-separated commands like "py -3"
     const [pythonCommand, pythonBaseArgs] = parsePythonCommand(this.getPythonPath());
@@ -365,6 +375,7 @@ export class AgentProcessManager {
       env: {
         ...env, // Already includes process.env, extraEnv, profileEnv, PYTHONUNBUFFERED, PYTHONUTF8
         ...pythonEnv, // Include Python environment (PYTHONPATH for bundled packages)
+        ...oauthModeClearVars, // Clear stale ANTHROPIC_* vars when in OAuth mode
         ...apiProfileEnv // Include active API profile config (highest priority for ANTHROPIC_* vars)
       }
     });
