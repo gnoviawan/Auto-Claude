@@ -258,7 +258,7 @@ export class AgentQueueManager {
       PYTHONUTF8: '1'
     };
 
-    // Debug: Show OAuth token source (AC4: never log the actual token)
+    // Debug: Show OAuth token source (token values intentionally omitted for security - AC4)
     const tokenSource = profileEnv['CLAUDE_CODE_OAUTH_TOKEN']
       ? 'Electron app profile'
       : (combinedEnv['CLAUDE_CODE_OAUTH_TOKEN'] ? 'auto-claude/.env' : 'not found');
@@ -266,7 +266,6 @@ export class AgentQueueManager {
     debugLog('[Agent Queue] OAuth token status:', {
       source: tokenSource,
       hasToken
-      // SECURITY: Never log token preview - even partial tokens are sensitive (AC4)
     });
 
     // Parse Python command to handle space-separated commands like "py -3"
@@ -580,7 +579,7 @@ export class AgentQueueManager {
       PYTHONUTF8: '1'
     };
 
-    // Debug: Show OAuth token source (AC4: never log the actual token)
+    // Debug: Show OAuth token source (token values intentionally omitted for security - AC4)
     const tokenSource = profileEnv['CLAUDE_CODE_OAUTH_TOKEN']
       ? 'Electron app profile'
       : (combinedEnv['CLAUDE_CODE_OAUTH_TOKEN'] ? 'auto-claude/.env' : 'not found');
@@ -588,7 +587,6 @@ export class AgentQueueManager {
     debugLog('[Agent Queue] OAuth token status:', {
       source: tokenSource,
       hasToken
-      // SECURITY: Never log token preview - even partial tokens are sensitive (AC4)
     });
 
     // Parse Python command to handle space-separated commands like "py -3"

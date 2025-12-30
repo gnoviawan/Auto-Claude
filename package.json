@@ -40,5 +40,8 @@
     "coding",
     "agents",
     "electron"
-  ]
+  ],
+  "devDependencies": {
+    "jsdom": "^27.4.0"
+  }
 }

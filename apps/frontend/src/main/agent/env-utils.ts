@@ -32,7 +32,8 @@ export function getOAuthModeClearVars(apiProfileEnv: Record<string, string>): Re
     ANTHROPIC_AUTH_TOKEN: '',
     ANTHROPIC_BASE_URL: '',
     ANTHROPIC_MODEL: '',
-    ANTHROPIC_DEFAULT_CHAT_MODEL: '',
-    ANTHROPIC_DEFAULT_AUTOCOMPLETE_MODEL: ''
+    ANTHROPIC_DEFAULT_HAIKU_MODEL: '',
+    ANTHROPIC_DEFAULT_SONNET_MODEL: '',
+    ANTHROPIC_DEFAULT_OPUS_MODEL: ''
   };
 }

@@ -333,8 +333,11 @@ describe('AgentProcessManager - API Profile Env Injection (Story 2.3)', () => {
 
       vi.mocked(profileService.getAPIProfileEnv).mockResolvedValue(mockApiProfileEnv);
 
-      // Mock console.log to capture any debug output
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      // Mock ALL console methods to capture any debug/error output
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
       await processManager.spawnProcess('task-1', '/fake/cwd', ['run.py'], {}, 'task-execution');
 
@@ -344,14 +347,51 @@ describe('AgentProcessManager - API Profile Env Injection (Story 2.3)', () => {
       // Verify the full API key is in the env (for Python subprocess)
       expect(envArg.ANTHROPIC_AUTH_TOKEN).toBe('sk-sensitive-api-key-12345678');
 
-      // Verify nothing was logged to console
-      const logCalls = consoleSpy.mock.calls.flatMap(call => call.map(String));
-      const logString = JSON.stringify(logCalls);
+      // Collect ALL console output from all methods
+      const allLogCalls = [
+        ...consoleLogSpy.mock.calls,
+        ...consoleErrorSpy.mock.calls,
+        ...consoleWarnSpy.mock.calls,
+        ...consoleDebugSpy.mock.calls
+      ].flatMap(call => call.map(String));
+      const logString = JSON.stringify(allLogCalls);
 
-      // The full API key should NOT appear in any logs
+      // The full API key should NOT appear in any logs (AC4 compliance)
       expect(logString).not.toContain('sk-sensitive-api-key-12345678');
 
-      consoleSpy.mockRestore();
+      // Restore all spies
+      consoleLogSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
+      consoleDebugSpy.mockRestore();
+    });
+
+    it('should not log API key even in error scenarios', async () => {
+      const mockApiProfileEnv = {
+        ANTHROPIC_AUTH_TOKEN: 'sk-secret-key-for-error-test',
+        ANTHROPIC_BASE_URL: 'https://api.example.com'
+      };
+
+      vi.mocked(profileService.getAPIProfileEnv).mockResolvedValue(mockApiProfileEnv);
+
+      // Mock console methods
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+      await processManager.spawnProcess('task-1', '/fake/cwd', ['run.py'], {}, 'task-execution');
+
+      // Collect all error and log output
+      const allOutput = [
+        ...consoleErrorSpy.mock.calls,
+        ...consoleLogSpy.mock.calls
+      ].flatMap(call => call.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)));
+      const outputString = allOutput.join(' ');
+
+      // Verify API key is never exposed in logs
+      expect(outputString).not.toContain('sk-secret-key-for-error-test');
+
+      consoleErrorSpy.mockRestore();
+      consoleLogSpy.mockRestore();
     });
   });
 
