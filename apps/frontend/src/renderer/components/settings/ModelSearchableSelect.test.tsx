@@ -99,7 +99,9 @@ describe('ModelSearchableSelect', () => {
     fireEvent.focus(input);
 
     await waitFor(() => {
-      // Component shows a Loader2 spinner with animate-spin classn      expect(spinner).toBeInTheDocument();
+      // Component shows a Loader2 spinner with animate-spin class
+      const spinner = document.querySelector('.animate-spin');
+      expect(spinner).toBeInTheDocument();
     });
   });
 
