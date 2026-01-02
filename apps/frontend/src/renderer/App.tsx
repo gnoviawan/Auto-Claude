@@ -136,6 +136,7 @@ export function App() {
   const [settingsInitialProjectSection, setSettingsInitialProjectSection] = useState<ProjectSettingsSection | undefined>(undefined);
   const [activeView, setActiveView] = useState<SidebarView>('kanban');
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false);
+  const [isRefreshingTasks, setIsRefreshingTasks] = useState(false);
 
   // Initialize dialog state
   const [showInitDialog, setShowInitDialog] = useState(false);
@@ -462,6 +463,17 @@ export function App() {
     setSelectedTask(task);
   };
 
+  const handleRefreshTasks = async () => {
+    const currentProjectId = activeProjectId || selectedProjectId;
+    if (!currentProjectId) return;
+    setIsRefreshingTasks(true);
+    try {
+      await loadTasks(currentProjectId);
+    } finally {
+      setIsRefreshingTasks(false);
+    }
+  };
+
   const handleCloseTaskDetail = () => {
     setSelectedTask(null);
   };
@@ -736,6 +748,8 @@ export function App() {
                     tasks={tasks}
                     onTaskClick={handleTaskClick}
                     onNewTaskClick={() => setIsNewTaskDialogOpen(true)}
+                    onRefresh={handleRefreshTasks}
+                    isRefreshing={isRefreshingTasks}
                   />
                 )}
                 {/* TerminalGrid is always mounted but hidden when not active to preserve terminal state */}
