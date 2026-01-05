@@ -610,12 +610,12 @@ export function useClaudeTokenCheck() {
     setIsLoading(true);
     setError(null);
 
+    // Compute once - activeProfileId is captured from closure
+    const hasAPIProfile = !!activeProfileId;
+
     try {
       const result = await window.electronAPI.checkSourceToken();
       const hasSourceOAuthToken = result.success && result.data?.hasToken;
-
-      // Also check for active API profile
-      const hasAPIProfile = Boolean(activeProfileId && activeProfileId !== '');
 
       // Auth is valid if either OAuth token OR API profile exists
       setHasToken(hasSourceOAuthToken || hasAPIProfile);
@@ -626,7 +626,6 @@ export function useClaudeTokenCheck() {
       }
     } catch (err) {
       // Even if OAuth check fails, API profile is still valid auth
-      const hasAPIProfile = Boolean(activeProfileId && activeProfileId !== '');
       setHasToken(hasAPIProfile);
       if (!hasAPIProfile) {
         setError(err instanceof Error ? err.message : 'Unknown error');
